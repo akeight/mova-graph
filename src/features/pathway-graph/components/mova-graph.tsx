@@ -15,7 +15,12 @@ import {
   type NodeTypes,
 } from "@xyflow/react";
 
-import { sampleGraph } from "../data/sample-graph";
+import { buildStudentGraph } from
+  "../builders/build-student-graph";
+import { sampleCareerRole } from
+  "../data/sample-role";
+import { sampleStudentProfile } from
+  "../data/sample-student";
 import { MovaNodeCard } from "../nodes/mova-node";
 import type { MovaEdge, MovaNode } from "../types/graph";
 
@@ -23,12 +28,24 @@ const nodeTypes = {
   mova: MovaNodeCard,
 } satisfies NodeTypes;
 
+const createInitialGraph = () =>
+  buildStudentGraph(
+    sampleStudentProfile,
+    sampleCareerRole,
+  );
+
 export function MovaGraph() {
+  const initialGraph = createInitialGraph();
+
   const [nodes, setNodes, onNodesChange] =
-    useNodesState<MovaNode>(sampleGraph.nodes);
+    useNodesState<MovaNode>(
+      initialGraph.nodes,
+    );
 
   const [edges, setEdges, onEdgesChange] =
-    useEdgesState<MovaEdge>(sampleGraph.edges);
+    useEdgesState<MovaEdge>(
+      initialGraph.edges,
+    );
 
     const handleConnect = useCallback(
       (connection: Connection) => {
@@ -39,10 +56,13 @@ export function MovaGraph() {
       [setEdges],
     );
 
-  const resetGraph = () => {
-    setNodes(sampleGraph.nodes);
-    setEdges(sampleGraph.edges);
-  };
+    const resetGraph = () => {
+      const graph = createInitialGraph();
+    
+      setNodes(graph.nodes);
+      setEdges(graph.edges);
+    };
+
 
   return (
     <section className="space-y-4">

@@ -25,6 +25,9 @@ export type MovaNode = Node<MovaNodeData, "mova">;
 
 export type MovaRelationship =
   | "completed"
+  | "pursuing"
+  | "plans"
+  | "created"
   | "teaches"
   | "demonstrates"
   | "requires"
