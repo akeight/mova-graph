@@ -1,32 +1,46 @@
 "use client";
 
 import { useCallback } from "react";
+
 import {
   addEdge,
   Background,
+  BackgroundVariant,
   Controls,
   MiniMap,
   ReactFlow,
   useEdgesState,
   useNodesState,
   type Connection,
+  type NodeTypes,
 } from "@xyflow/react";
 
 import { sampleGraph } from "../data/sample-graph";
+import { MovaNodeCard } from "../nodes/mova-node";
 import type { MovaEdge, MovaNode } from "../types/graph";
 
-export function MovaGraph() {
-  const [nodes, setNodes, onNodesChange] = useNodesState<MovaNode>(
-    sampleGraph.nodes,
-  );
+const nodeTypes = {
+  mova: MovaNodeCard,
+} satisfies NodeTypes;
 
-  const [edges, setEdges, onEdgesChange] = useEdgesState<MovaEdge>(
-    sampleGraph.edges,
-  );
+export function MovaGraph() {
+  const [nodes, setNodes, onNodesChange] =
+    useNodesState<MovaNode>(sampleGraph.nodes);
+
+  const [edges, setEdges, onEdgesChange] =
+    useEdgesState<MovaEdge>(sampleGraph.edges);
 
   const handleConnect = useCallback(
     (connection: Connection) => {
-      setEdges((currentEdges) => addEdge(connection, currentEdges));
+      setEdges((currentEdges) =>
+        addEdge(
+          {
+            ...connection,
+            type: "smoothstep",
+          },
+          currentEdges,
+        ),
+      );
     },
     [setEdges],
   );
@@ -62,14 +76,30 @@ export function MovaGraph() {
         <ReactFlow
           nodes={nodes}
           edges={edges}
+          nodeTypes={nodeTypes}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={handleConnect}
+          defaultEdgeOptions={{
+            type: "smoothstep",
+          }}
           fitView
+          fitViewOptions={{
+            padding: 0.2,
+          }}
         >
-          <Background />
+          <Background
+            variant={BackgroundVariant.Dots}
+            gap={20}
+            size={1}
+          />
+
           <Controls />
-          <MiniMap />
+
+          <MiniMap
+            pannable
+            zoomable
+          />
         </ReactFlow>
       </div>
     </section>

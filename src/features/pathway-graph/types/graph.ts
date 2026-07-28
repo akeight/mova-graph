@@ -21,16 +21,18 @@ export type MovaNodeData = {
   description?: string;
 };
 
-export type MovaNode = Node<MovaNodeData>;
+export type MovaNode = Node<MovaNodeData, "mova">;
+
+export type MovaRelationship =
+  | "completed"
+  | "teaches"
+  | "demonstrates"
+  | "requires"
+  | "supports"
+  | "unlocks";
 
 export type MovaEdgeData = {
-  relationship:
-    | "completed"
-    | "teaches"
-    | "demonstrates"
-    | "requires"
-    | "supports"
-    | "unlocks";
+  relationship: MovaRelationship;
 };
 
 export type MovaEdge = Edge<MovaEdgeData>;
