@@ -30,20 +30,14 @@ export function MovaGraph() {
   const [edges, setEdges, onEdgesChange] =
     useEdgesState<MovaEdge>(sampleGraph.edges);
 
-  const handleConnect = useCallback(
-    (connection: Connection) => {
-      setEdges((currentEdges) =>
-        addEdge(
-          {
-            ...connection,
-            type: "smoothstep",
-          },
-          currentEdges,
-        ),
-      );
-    },
-    [setEdges],
-  );
+    const handleConnect = useCallback(
+      (connection: Connection) => {
+        setEdges((currentEdges) =>
+          addEdge(connection, currentEdges),
+        );
+      },
+      [setEdges],
+    );
 
   const resetGraph = () => {
     setNodes(sampleGraph.nodes);
@@ -80,13 +74,7 @@ export function MovaGraph() {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={handleConnect}
-          defaultEdgeOptions={{
-            type: "smoothstep",
-          }}
           fitView
-          fitViewOptions={{
-            padding: 0.2,
-          }}
         >
           <Background
             variant={BackgroundVariant.Dots}
