@@ -75,7 +75,6 @@ export const sampleGraph: MovaGraph = {
       id: "student-course",
       source: "student-1",
       target: "course-web-development",
-      type: "smoothstep",
       label: "completed",
       data: {
         relationship: "completed",
@@ -85,7 +84,6 @@ export const sampleGraph: MovaGraph = {
       id: "student-catalyst",
       source: "student-1",
       target: "experience-catalyst",
-      type: "smoothstep",
       label: "built",
       data: {
         relationship: "completed",
@@ -95,7 +93,6 @@ export const sampleGraph: MovaGraph = {
       id: "course-typescript",
       source: "course-web-development",
       target: "skill-typescript",
-      type: "smoothstep",
       label: "teaches",
       data: {
         relationship: "teaches",
@@ -105,7 +102,6 @@ export const sampleGraph: MovaGraph = {
       id: "catalyst-typescript",
       source: "experience-catalyst",
       target: "skill-typescript",
-      type: "smoothstep",
       label: "demonstrates",
       data: {
         relationship: "demonstrates",
@@ -115,7 +111,6 @@ export const sampleGraph: MovaGraph = {
       id: "catalyst-product-thinking",
       source: "experience-catalyst",
       target: "skill-product-thinking",
-      type: "smoothstep",
       label: "demonstrates",
       data: {
         relationship: "demonstrates",
@@ -125,7 +120,6 @@ export const sampleGraph: MovaGraph = {
       id: "typescript-product-engineer",
       source: "skill-typescript",
       target: "role-product-engineer",
-      type: "smoothstep",
       label: "required by",
       data: {
         relationship: "requires",
@@ -135,7 +129,6 @@ export const sampleGraph: MovaGraph = {
       id: "product-thinking-product-engineer",
       source: "skill-product-thinking",
       target: "role-product-engineer",
-      type: "smoothstep",
       label: "supports",
       data: {
         relationship: "supports",
