@@ -166,7 +166,7 @@ export function buildStudentGraph(
     })),
   ];
 
-  activities.forEach((activity, index) => {
+  activities.forEach((activity) => {
     const nodeId =
       `${activity.kind}-${activity.item.id}`;
 
@@ -262,7 +262,7 @@ export function buildStudentGraph(
     }
   });
 
-  skillIds.forEach((skillId, index) => {
+  skillIds.forEach((skillId) => {
     const studentSkill =
       studentSkillMap.get(skillId);
 

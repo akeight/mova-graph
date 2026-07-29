@@ -16,6 +16,10 @@ import type { StudentProfile } from
 
 import { sampleStudentProfile } from "../data/sample-student";
 import { MovaGraph } from "./mova-graph";
+import { ReadinessSummary } from
+  "@/features/readiness/components/readiness-summary";
+import { calculateReadiness } from
+  "@/features/readiness/services/calculate-readiness";
 
 function createDemoProfile(): StudentProfile {
   return structuredClone(sampleStudentProfile);
@@ -31,6 +35,15 @@ export function MovaWorkspace() {
   const selectedRole = useMemo(
     () => getCareerRole(selectedRoleId),
     [selectedRoleId],
+  );
+
+  const readinessAssessment = useMemo(
+    () =>
+      calculateReadiness(
+        profile,
+        selectedRole,
+      ),
+    [profile, selectedRole],
   );
 
   const restoreDemo = () => {
@@ -53,10 +66,14 @@ export function MovaWorkspace() {
           onRestoreDemo={restoreDemo}
         />
 
-        <MovaGraph
-          profile={profile}
-          role={selectedRole}
-        />
+        <div className="min-w-0 space-y-6">
+          <ReadinessSummary
+            role={selectedRole}
+            assessment={readinessAssessment}
+          />
+
+          <MovaGraph profile={profile} role={selectedRole} />
+        </div>
       </div>
     </div>
   );

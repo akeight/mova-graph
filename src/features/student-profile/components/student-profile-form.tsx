@@ -14,6 +14,8 @@ import type {
   StudentProfile,
   StudentSkill,
 } from "../types/student-profile";
+import { reconcileProfileSkills } from
+  "../utils/reconcile-profile-skills";
 
 type StudentProfileFormProps = {
   profile: StudentProfile;
@@ -161,21 +163,32 @@ export function StudentProfileForm({
   };
 
   const removeCourse = (courseId: string) => {
-    onChange({
+    const updatedProfile: StudentProfile = {
       ...profile,
       courses: profile.courses.filter(
         (course) => course.id !== courseId,
       ),
-    });
+    };
+  
+    onChange(
+      reconcileProfileSkills(updatedProfile),
+    );
   };
 
-  const removeExperience = (experienceId: string) => {
-    onChange({
+  const removeExperience = (
+    experienceId: string,
+  ) => {
+    const updatedProfile: StudentProfile = {
       ...profile,
       experiences: profile.experiences.filter(
-        (experience) => experience.id !== experienceId,
+        (experience) =>
+          experience.id !== experienceId,
       ),
-    });
+    };
+  
+    onChange(
+      reconcileProfileSkills(updatedProfile),
+    );
   };
 
   return (
