@@ -109,7 +109,7 @@ export function MovaNodeCard({
   return (
     <article
       className={cn(
-        "relative w-64 rounded-2xl border-2 bg-background p-4 text-foreground shadow-sm transition-shadow",
+        "relative flex h-[136px] w-64 flex-col rounded-2xl border-2 bg-background p-4 text-foreground shadow-sm transition-shadow",
         category.borderClassName,
         selected && "ring-2 ring-primary/40 ring-offset-2 ring-offset-background",
       )}
@@ -148,7 +148,7 @@ export function MovaNodeCard({
       ) : null}
 
       {status ? (
-        <div className="mt-4 flex items-center gap-2 border-t pt-3">
+        <div className="mt-auto flex items-center gap-2 border-t pt-3">
           <span
             className={cn(
               "h-2 w-2 rounded-full",
