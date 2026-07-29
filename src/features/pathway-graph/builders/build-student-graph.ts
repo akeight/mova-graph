@@ -15,28 +15,6 @@ import type {
   MovaRelationship,
 } from "../types/graph";
 
-const COLUMN_X = {
-  student: 0,
-  activity: 340,
-  skill: 680,
-  role: 1020,
-} as const;
-
-const COLUMN_CENTER_Y = 280;
-const NODE_VERTICAL_GAP = 180;
-
-function getCenteredY(
-  index: number,
-  total: number,
-): number {
-  const columnHeight =
-    Math.max(total - 1, 0) * NODE_VERTICAL_GAP;
-
-  const columnStart =
-    COLUMN_CENTER_Y - columnHeight / 2;
-
-  return columnStart + index * NODE_VERTICAL_GAP;
-}
 
 function getCourseNodeStatus(
   status: CourseProgress,
@@ -164,10 +142,10 @@ export function buildStudentGraph(
   nodes.push({
     id: studentNodeId,
     type: "mova",
-    position: {
-      x: COLUMN_X.student,
-      y: COLUMN_CENTER_Y,
-    },
+      position: {
+        x: 0,
+        y: 0,
+      },
     data: {
       label: profile.name,
       category: "student",
@@ -200,11 +178,8 @@ export function buildStudentGraph(
         id: nodeId,
         type: "mova",
         position: {
-          x: COLUMN_X.activity,
-          y: getCenteredY(
-            index,
-            activities.length,
-          ),
+          x: 0,
+          y: 0,
         },
         data: {
           label: activity.item.title,
@@ -246,11 +221,8 @@ export function buildStudentGraph(
       id: nodeId,
       type: "mova",
       position: {
-        x: COLUMN_X.activity,
-        y: getCenteredY(
-          index,
-          activities.length,
-        ),
+        x: 0,
+        y: 0
       },
       data: {
         label: activity.item.title,
@@ -306,11 +278,8 @@ export function buildStudentGraph(
       id: `skill-${skillId}`,
       type: "mova",
       position: {
-        x: COLUMN_X.skill,
-        y: getCenteredY(
-          index,
-          skillIds.length,
-        ),
+        x: 0,
+        y: 0,
       },
       data: {
         label: skillName,
@@ -349,8 +318,8 @@ export function buildStudentGraph(
     id: roleNodeId,
     type: "mova",
     position: {
-      x: COLUMN_X.role,
-      y: COLUMN_CENTER_Y,
+      x: 0,
+      y: 0,
     },
     data: {
       label: role.title,

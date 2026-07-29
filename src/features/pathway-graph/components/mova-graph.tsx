@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 
 import {
   addEdge,
@@ -13,56 +13,73 @@ import {
   useNodesState,
   type Connection,
   type NodeTypes,
+  type ReactFlowInstance,
 } from "@xyflow/react";
 
-import { buildStudentGraph } from
-  "../builders/build-student-graph";
-import { sampleCareerRole } from
-  "../data/sample-role";
-import { sampleStudentProfile } from
-  "../data/sample-student";
+import { buildStudentGraph } from "../builders/build-student-graph";
+import { sampleCareerRole } from "../data/sample-role";
+import { sampleStudentProfile } from "../data/sample-student";
+import { layoutMovaGraph } from "../layout/layout-mova-graph";
 import { MovaNodeCard } from "../nodes/mova-node";
 import type { MovaEdge, MovaNode } from "../types/graph";
+
+const HORIZONTAL_SPACING = 650;
+const VERTICAL_SPACING = 160;
 
 const nodeTypes = {
   mova: MovaNodeCard,
 } satisfies NodeTypes;
 
-const createInitialGraph = () =>
-  buildStudentGraph(
+function createInitialGraph() {
+  const graph = buildStudentGraph(
     sampleStudentProfile,
     sampleCareerRole,
   );
+
+  return layoutMovaGraph(graph, {
+    horizontalSpacing: HORIZONTAL_SPACING,
+    verticalSpacing: VERTICAL_SPACING,
+  });
+}
 
 export function MovaGraph() {
   const initialGraph = createInitialGraph();
 
   const [nodes, setNodes, onNodesChange] =
-    useNodesState<MovaNode>(
-      initialGraph.nodes,
-    );
+    useNodesState<MovaNode>(initialGraph.nodes);
 
   const [edges, setEdges, onEdgesChange] =
-    useEdgesState<MovaEdge>(
-      initialGraph.edges,
-    );
+    useEdgesState<MovaEdge>(initialGraph.edges);
 
-    const handleConnect = useCallback(
-      (connection: Connection) => {
-        setEdges((currentEdges) =>
-          addEdge(connection, currentEdges),
-        );
-      },
-      [setEdges],
-    );
+  const reactFlowInstanceRef =
+    useRef<ReactFlowInstance<MovaNode, MovaEdge> | null>(null);
 
-    const resetGraph = () => {
-      const graph = createInitialGraph();
-    
-      setNodes(graph.nodes);
-      setEdges(graph.edges);
-    };
+  const handleConnect = useCallback(
+    (connection: Connection) => {
+      setEdges((currentEdges) =>
+        addEdge(connection, currentEdges),
+      );
+    },
+    [setEdges],
+  );
 
+  const resetGraph = useCallback(() => {
+    const graph = createInitialGraph();
+
+    setNodes(graph.nodes);
+    setEdges(graph.edges);
+
+    // Wait for React Flow to receive the reset node positions,
+    // then move the viewport so the complete graph is visible again.
+    window.requestAnimationFrame(() => {
+      void reactFlowInstanceRef.current?.fitView({
+        padding: 0.12,
+        minZoom: 0.2,
+        maxZoom: 0.85,
+        duration: 400,
+      });
+    });
+  }, [setEdges, setNodes]);
 
   return (
     <section className="space-y-4">
@@ -80,13 +97,13 @@ export function MovaGraph() {
         <button
           type="button"
           onClick={resetGraph}
-          className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
+          className="rounded-md border px-4 py-2 text-sm font-medium transition-colors hover:bg-muted"
         >
           Reset graph
         </button>
       </div>
 
-      <div className="h-[70vh] min-h-[500px] w-full overflow-hidden rounded-2xl border bg-background">
+      <div className="h-[75vh] min-h-[650px] w-full overflow-hidden rounded-2xl border bg-background">
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -94,7 +111,17 @@ export function MovaGraph() {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={handleConnect}
+          onInit={(instance) => {
+            reactFlowInstanceRef.current = instance;
+          }}
           fitView
+          fitViewOptions={{
+            padding: 0.12,
+            minZoom: 0.2,
+            maxZoom: 0.85,
+          }}
+          minZoom={0.2}
+          maxZoom={1.5}
         >
           <Background
             variant={BackgroundVariant.Dots}
