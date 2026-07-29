@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import {
-  addEdge,
   Background,
   BackgroundVariant,
   Controls,
@@ -11,95 +10,106 @@ import {
   ReactFlow,
   useEdgesState,
   useNodesState,
-  type Connection,
   type NodeTypes,
   type ReactFlowInstance,
 } from "@xyflow/react";
 
+import type { CareerRole } from "@/features/goals/types/career-role";
+import type { StudentProfile } from "@/features/student-profile/types/student-profile";
+
 import { buildStudentGraph } from "../builders/build-student-graph";
-import { sampleCareerRole } from "../data/sample-role";
-import { sampleStudentProfile } from "../data/sample-student";
 import { layoutMovaGraph } from "../layout/layout-mova-graph";
 import { MovaNodeCard } from "../nodes/mova-node";
 import type { MovaEdge, MovaNode } from "../types/graph";
 
-const HORIZONTAL_SPACING = 650;
-const VERTICAL_SPACING = 160;
+const HORIZONTAL_SPACING = 560;
+const VERTICAL_SPACING = 150;
 
 const nodeTypes = {
   mova: MovaNodeCard,
 } satisfies NodeTypes;
 
-function createInitialGraph() {
-  const graph = buildStudentGraph(
-    sampleStudentProfile,
-    sampleCareerRole,
+type MovaGraphProps = {
+  profile: StudentProfile;
+  role: CareerRole;
+};
+
+export function MovaGraph({
+  profile,
+  role,
+}: MovaGraphProps) {
+  const graph = useMemo(() => {
+    const studentGraph = buildStudentGraph(profile, role);
+
+    return layoutMovaGraph(studentGraph, {
+      horizontalSpacing: HORIZONTAL_SPACING,
+      verticalSpacing: VERTICAL_SPACING,
+    });
+  }, [profile, role]);
+
+  const structureKey = useMemo(
+    () => graph.nodes.map((node) => node.id).sort().join("|"),
+    [graph.nodes],
   );
 
-  return layoutMovaGraph(graph, {
-    horizontalSpacing: HORIZONTAL_SPACING,
-    verticalSpacing: VERTICAL_SPACING,
-  });
-}
-
-export function MovaGraph() {
-  const initialGraph = createInitialGraph();
-
   const [nodes, setNodes, onNodesChange] =
-    useNodesState<MovaNode>(initialGraph.nodes);
+    useNodesState<MovaNode>(graph.nodes);
 
   const [edges, setEdges, onEdgesChange] =
-    useEdgesState<MovaEdge>(initialGraph.edges);
+    useEdgesState<MovaEdge>(graph.edges);
 
   const reactFlowInstanceRef =
     useRef<ReactFlowInstance<MovaNode, MovaEdge> | null>(null);
 
-  const handleConnect = useCallback(
-    (connection: Connection) => {
-      setEdges((currentEdges) =>
-        addEdge(connection, currentEdges),
-      );
-    },
-    [setEdges],
-  );
+  useEffect(() => {
+    setNodes(graph.nodes);
+    setEdges(graph.edges);
+  }, [graph, setEdges, setNodes]);
 
-  const resetGraph = useCallback(() => {
-    const graph = createInitialGraph();
+  useEffect(() => {
+    window.requestAnimationFrame(() => {
+      void reactFlowInstanceRef.current?.fitView({
+        padding: 0.1,
+        minZoom: 0.35,
+        maxZoom: 0.85,
+        duration: 350,
+      });
+    });
+  }, [structureKey]);
 
+  const resetGraphLayout = useCallback(() => {
     setNodes(graph.nodes);
     setEdges(graph.edges);
 
-    // Wait for React Flow to receive the reset node positions,
-    // then move the viewport so the complete graph is visible again.
     window.requestAnimationFrame(() => {
       void reactFlowInstanceRef.current?.fitView({
-        padding: 0.12,
-        minZoom: 0.2,
+        padding: 0.1,
+        minZoom: 0.35,
         maxZoom: 0.85,
         duration: 400,
       });
     });
-  }, [setEdges, setNodes]);
+  }, [graph, setEdges, setNodes]);
 
   return (
-    <section className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
+    <section className="min-w-0 space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">
             Your opportunity map
           </h2>
 
-          <p className="text-muted-foreground">
-            Explore how your courses and experiences connect to your goal.
+          <p className="text-sm text-muted-foreground">
+            See how your courses and experiences connect to {role.title}.
           </p>
         </div>
 
         <button
           type="button"
-          onClick={resetGraph}
+          onClick={resetGraphLayout}
           className="rounded-md border px-4 py-2 text-sm font-medium transition-colors hover:bg-muted"
         >
-          Reset graph
+          Reset layout
         </button>
       </div>
 
@@ -110,17 +120,17 @@ export function MovaGraph() {
           nodeTypes={nodeTypes}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
-          onConnect={handleConnect}
           onInit={(instance) => {
             reactFlowInstanceRef.current = instance;
           }}
+          nodesConnectable={false}
           fitView
           fitViewOptions={{
-            padding: 0.12,
-            minZoom: 0.2,
+            padding: 0.1,
+            minZoom: 0.35,
             maxZoom: 0.85,
           }}
-          minZoom={0.2}
+          minZoom={0.35}
           maxZoom={1.5}
         >
           <Background
@@ -131,10 +141,7 @@ export function MovaGraph() {
 
           <Controls />
 
-          <MiniMap
-            pannable
-            zoomable
-          />
+          <MiniMap pannable zoomable />
         </ReactFlow>
       </div>
     </section>
