@@ -14,6 +14,8 @@ import type {
   MovaNodeStatus,
   MovaRelationship,
 } from "../types/graph";
+import type { NextMoveRecommendation } from
+  "@/features/recommendations/types/recommendation";
 
 
 function getCourseNodeStatus(
@@ -94,6 +96,7 @@ function createEdge(
 export function buildStudentGraph(
   profile: StudentProfile,
   role: CareerRole,
+  recommendations: NextMoveRecommendation[] = [],
 ): MovaGraph {
   const nodes: MovaNode[] = [];
   const edges: MovaEdge[] = [];
@@ -327,6 +330,39 @@ export function buildStudentGraph(
       status: "recommended",
       description: role.description,
     },
+  });
+
+  recommendations.forEach((recommendation) => {
+    const recommendationNodeId =
+      recommendation.id;
+
+    nodes.push({
+      id: recommendationNodeId,
+      type: "mova",
+      position: {
+        x: 0,
+        y: 0,
+      },
+      data: {
+        label: recommendation.title,
+        category: "recommendation",
+        status: "recommended",
+        description: [
+          recommendation.action,
+          `Estimated impact: +${recommendation.estimatedScoreIncrease} readiness points.`,
+        ].join(" "),
+      },
+    });
+
+    edges.push(
+      createEdge(
+        `${recommendationNodeId}-skill-${recommendation.skillId}`,
+        recommendationNodeId,
+        `skill-${recommendation.skillId}`,
+        "strengthens",
+        "strengthens",
+      ),
+    );
   });
 
   return {
