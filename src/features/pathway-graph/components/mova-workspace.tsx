@@ -9,6 +9,14 @@ import {
   defaultCareerRoleId,
   getCareerRole,
 } from "@/features/goals/data/career-roles";
+import { ReadinessSummary } from
+  "@/features/readiness/components/readiness-summary";
+import { calculateReadiness } from
+  "@/features/readiness/services/calculate-readiness";
+import { RecommendationSummary } from
+  "@/features/recommendations/components/recommendation-summary";
+import { generateRecommendations } from
+  "@/features/recommendations/services/generate-recommendations";
 import { StudentProfileForm } from
   "@/features/student-profile/components/student-profile-form";
 import type { StudentProfile } from
@@ -16,10 +24,6 @@ import type { StudentProfile } from
 
 import { sampleStudentProfile } from "../data/sample-student";
 import { MovaGraph } from "./mova-graph";
-import { ReadinessSummary } from
-  "@/features/readiness/components/readiness-summary";
-import { calculateReadiness } from
-  "@/features/readiness/services/calculate-readiness";
 
 function createDemoProfile(): StudentProfile {
   return structuredClone(sampleStudentProfile);
@@ -44,6 +48,14 @@ export function MovaWorkspace() {
         selectedRole,
       ),
     [profile, selectedRole],
+  );
+
+  const recommendations = useMemo(
+    () =>
+      generateRecommendations(
+        readinessAssessment,
+      ),
+    [readinessAssessment],
   );
 
   const restoreDemo = () => {
@@ -72,7 +84,16 @@ export function MovaWorkspace() {
             assessment={readinessAssessment}
           />
 
-          <MovaGraph profile={profile} role={selectedRole} />
+          <RecommendationSummary
+            roleTitle={selectedRole.title}
+            recommendations={recommendations}
+          />
+
+          <MovaGraph
+            profile={profile}
+            role={selectedRole}
+            recommendations={recommendations}
+          />
         </div>
       </div>
     </div>

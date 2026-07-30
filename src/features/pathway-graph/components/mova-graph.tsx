@@ -21,6 +21,8 @@ import { buildStudentGraph } from "../builders/build-student-graph";
 import { layoutMovaGraph } from "../layout/layout-mova-graph";
 import { MovaNodeCard } from "../nodes/mova-node";
 import type { MovaEdge, MovaNode } from "../types/graph";
+import type { NextMoveRecommendation } from
+  "@/features/recommendations/types/recommendation";
 
 const HORIZONTAL_SPACING = 560;
 const VERTICAL_SPACING = 150;
@@ -32,20 +34,22 @@ const nodeTypes = {
 type MovaGraphProps = {
   profile: StudentProfile;
   role: CareerRole;
+  recommendations: NextMoveRecommendation[];
 };
 
 export function MovaGraph({
   profile,
   role,
+  recommendations,
 }: MovaGraphProps) {
   const graph = useMemo(() => {
-    const studentGraph = buildStudentGraph(profile, role);
+    const studentGraph = buildStudentGraph(profile, role, recommendations);
 
     return layoutMovaGraph(studentGraph, {
       horizontalSpacing: HORIZONTAL_SPACING,
       verticalSpacing: VERTICAL_SPACING,
     });
-  }, [profile, role]);
+  }, [profile, role, recommendations]);
 
   const structureKey = useMemo(
     () => graph.nodes.map((node) => node.id).sort().join("|"),

@@ -32,6 +32,7 @@ export type MovaRelationship =
   | "demonstrates"
   | "requires"
   | "supports"
+  | "strengthens"
   | "unlocks";
 
 export type MovaEdgeData = {
