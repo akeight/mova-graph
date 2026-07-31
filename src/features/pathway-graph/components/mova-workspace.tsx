@@ -29,6 +29,14 @@ import type { StudentProfile } from
   "@/features/student-profile/types/student-profile";
 import { reconcileProfileSkills } from
   "@/features/student-profile/utils/reconcile-profile-skills";
+  import { ProfileExtractionReview } from
+  "@/features/skill-analysis/components/profile-extraction-review";
+
+import { applyApprovedProfileItem } from
+  "@/features/skill-analysis/services/apply-profile-item-extraction";
+
+import type { ApprovedProfileItem } from
+  "@/features/skill-analysis/types/profile-item-extraction";
 
 import { sampleStudentProfile } from "../data/sample-student";
 import { MovaGraph } from "./mova-graph";
@@ -148,6 +156,20 @@ export function MovaWorkspace() {
     );
   };
 
+  const handleAddExtractedItem = (
+    item: ApprovedProfileItem,
+  ) => {
+    const updatedProfile =
+      applyApprovedProfileItem(
+        profile,
+        item,
+      );
+  
+    handleProfileChange(
+      updatedProfile,
+    );
+  };
+
   const restoreDemo = () => {
     setProfile(createDemoProfile());
     setSelectedRoleId(defaultCareerRoleId);
@@ -160,6 +182,10 @@ export function MovaWorkspace() {
         roles={careerRoles}
         selectedRoleId={selectedRoleId}
         onSelect={handleRoleSelect}
+      />
+
+      <ProfileExtractionReview
+        onAdd={handleAddExtractedItem}
       />
 
       <div className="grid items-start gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
