@@ -12,7 +12,8 @@ export type MovaNodeStatus =
   | "complete"
   | "in-progress"
   | "missing"
-  | "recommended";
+  | "recommended"
+  | "scenario";
 
 export type MovaNodeData = {
   label: string;
