@@ -1,3 +1,8 @@
+import type {
+  CourseProgress,
+  ExperienceProgress,
+} from "@/features/student-profile/types/student-profile";
+
 export type ProfileItemKind =
   | "course"
   | "experience";
@@ -20,3 +25,19 @@ export type ProfileItemExtraction = {
   description: string;
   skills: ExtractedSkill[];
 };
+
+export type ApprovedProfileItem =
+  | {
+      kind: "course";
+      title: string;
+      description?: string;
+      status: CourseProgress;
+      skills: ExtractedSkill[];
+    }
+  | {
+      kind: "experience";
+      title: string;
+      description?: string;
+      status: ExperienceProgress;
+      skills: ExtractedSkill[];
+    };
