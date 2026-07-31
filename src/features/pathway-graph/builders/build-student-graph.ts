@@ -1,5 +1,7 @@
 import type { CareerRole } from
   "@/features/goals/types/career-role";
+import type { NextMoveRecommendation } from
+  "@/features/recommendations/types/recommendation";
 import type {
   CourseProgress,
   ExperienceProgress,
@@ -14,9 +16,9 @@ import type {
   MovaNodeStatus,
   MovaRelationship,
 } from "../types/graph";
-import type { NextMoveRecommendation } from
-  "@/features/recommendations/types/recommendation";
 
+const SCENARIO_EXPERIENCE_PREFIX =
+  "scenario-experience-";
 
 function getCourseNodeStatus(
   status: CourseProgress,
@@ -145,10 +147,10 @@ export function buildStudentGraph(
   nodes.push({
     id: studentNodeId,
     type: "mova",
-      position: {
-        x: 0,
-        y: 0,
-      },
+    position: {
+      x: 0,
+      y: 0,
+    },
     data: {
       label: profile.name,
       category: "student",
@@ -163,6 +165,7 @@ export function buildStudentGraph(
       kind: "course" as const,
       item: course,
     })),
+
     ...profile.experiences.map((experience) => ({
       kind: "experience" as const,
       item: experience,
@@ -175,7 +178,9 @@ export function buildStudentGraph(
 
     if (activity.kind === "course") {
       const relationship =
-        getCourseRelationship(activity.item.status);
+        getCourseRelationship(
+          activity.item.status,
+        );
 
       nodes.push({
         id: nodeId,
@@ -220,21 +225,35 @@ export function buildStudentGraph(
       return;
     }
 
+    const isScenarioExperience =
+      activity.item.id.startsWith(
+        SCENARIO_EXPERIENCE_PREFIX,
+      );
+
     nodes.push({
       id: nodeId,
       type: "mova",
       position: {
         x: 0,
-        y: 0
+        y: 0,
       },
       data: {
         label: activity.item.title,
         category: "experience",
-        status: getExperienceNodeStatus(
-          activity.item.status,
-        ),
-        description:
-          activity.item.description,
+
+        status: isScenarioExperience
+          ? "scenario"
+          : getExperienceNodeStatus(
+              activity.item.status,
+            ),
+
+        description: isScenarioExperience
+          ? [
+              "Hypothetical:",
+              activity.item.description ??
+                "Projected completed experience",
+            ].join(" ")
+          : activity.item.description,
       },
     });
 
@@ -243,9 +262,14 @@ export function buildStudentGraph(
         `${studentNodeId}-${nodeId}`,
         studentNodeId,
         nodeId,
-        activity.item.status === "completed"
-          ? "completed"
-          : "working on",
+
+        isScenarioExperience
+          ? "could complete"
+          : activity.item.status ===
+              "completed"
+            ? "completed"
+            : "working on",
+
         activity.item.status === "completed"
           ? "created"
           : "pursuing",
@@ -258,7 +282,9 @@ export function buildStudentGraph(
           `${nodeId}-skill-${skillId}`,
           nodeId,
           `skill-${skillId}`,
-          "demonstrates",
+          isScenarioExperience
+            ? "could demonstrate"
+            : "demonstrates",
           "demonstrates",
         ),
       );
@@ -289,6 +315,7 @@ export function buildStudentGraph(
         category: "skill",
         status:
           getSkillNodeStatus(studentSkill),
+
         description: roleRequirement
           ? roleRequirement.importance ===
             "required"
@@ -304,12 +331,14 @@ export function buildStudentGraph(
           `skill-${skillId}-${roleNodeId}`,
           `skill-${skillId}`,
           roleNodeId,
+
           roleRequirement.importance ===
-            "required"
+          "required"
             ? "required by"
             : "preferred for",
+
           roleRequirement.importance ===
-            "required"
+          "required"
             ? "requires"
             : "supports",
         ),
@@ -347,6 +376,7 @@ export function buildStudentGraph(
         label: recommendation.title,
         category: "recommendation",
         status: "recommended",
+
         description: [
           recommendation.action,
           `Estimated impact: +${recommendation.estimatedScoreIncrease} readiness points.`,

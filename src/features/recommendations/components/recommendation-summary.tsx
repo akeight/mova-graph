@@ -1,6 +1,7 @@
 import {
     ArrowUpRight,
     CheckCircle2,
+    FlaskConical,
     Lightbulb,
     TrendingUp,
   } from "lucide-react";
@@ -15,6 +16,10 @@ import {
   type RecommendationSummaryProps = {
     roleTitle: string;
     recommendations: NextMoveRecommendation[];
+    activeRecommendationId: string | null;
+    onSimulate: (
+      recommendation: NextMoveRecommendation,
+    ) => void;
   };
   
   const priorityConfig: Record<
@@ -49,6 +54,8 @@ import {
   export function RecommendationSummary({
     roleTitle,
     recommendations,
+    activeRecommendationId,
+    onSimulate,
   }: RecommendationSummaryProps) {
     if (recommendations.length === 0) {
       return (
@@ -86,6 +93,9 @@ import {
     const bestPriority =
       priorityConfig[bestRecommendation.priorityLevel];
   
+    const isBestRecommendationActive =
+      activeRecommendationId === bestRecommendation.id;
+  
     return (
       <section className="rounded-2xl border bg-card p-5 shadow-sm">
         <div className="flex items-start gap-3">
@@ -112,7 +122,14 @@ import {
           </div>
         </div>
   
-        <article className="mt-5 rounded-2xl border border-cyan-200 bg-cyan-50/60 p-5 dark:border-cyan-900 dark:bg-cyan-950/40">
+        <article
+          className={cn(
+            "mt-5 rounded-2xl border border-cyan-200 bg-cyan-50/60 p-5",
+            "dark:border-cyan-900 dark:bg-cyan-950/40",
+            isBestRecommendationActive &&
+              "ring-2 ring-violet-300 ring-offset-2 dark:ring-violet-800",
+          )}
+        >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-800 dark:text-cyan-200">
@@ -165,6 +182,30 @@ import {
               Currently {bestRecommendation.currentStatus}
             </span>
           </div>
+  
+          <button
+            type="button"
+            onClick={() =>
+              onSimulate(bestRecommendation)
+            }
+            aria-pressed={isBestRecommendationActive}
+            className={cn(
+              "mt-4 inline-flex items-center gap-2 rounded-lg px-4 py-2",
+              "text-sm font-semibold text-white transition-colors",
+              isBestRecommendationActive
+                ? "bg-violet-700 hover:bg-violet-800 dark:bg-violet-600 dark:hover:bg-violet-500"
+                : "bg-cyan-700 hover:bg-cyan-800 dark:bg-cyan-600 dark:hover:bg-cyan-500",
+            )}
+          >
+            <FlaskConical
+              className="h-4 w-4"
+              aria-hidden="true"
+            />
+  
+            {isBestRecommendationActive
+              ? "Previewing impact"
+              : "Preview impact"}
+          </button>
         </article>
   
         {otherRecommendations.length > 0 ? (
@@ -180,10 +221,18 @@ import {
                     recommendation.priorityLevel
                   ];
   
+                const isActive =
+                  activeRecommendationId ===
+                  recommendation.id;
+  
                 return (
                   <article
                     key={recommendation.id}
-                    className="rounded-xl border bg-background p-4"
+                    className={cn(
+                      "rounded-xl border bg-background p-4",
+                      isActive &&
+                        "border-violet-300 ring-2 ring-violet-200/60 dark:border-violet-800 dark:ring-violet-900/60",
+                    )}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex min-w-0 items-start gap-3">
@@ -230,6 +279,31 @@ import {
                         points
                       </span>
                     </div>
+  
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onSimulate(recommendation)
+                      }
+                      aria-pressed={isActive}
+                      className={cn(
+                        "mt-4 inline-flex w-full items-center justify-center gap-2",
+                        "rounded-lg border px-3 py-2 text-sm font-medium",
+                        "transition-colors",
+                        isActive
+                          ? "border-violet-300 bg-violet-50 text-violet-700 hover:bg-violet-100 dark:border-violet-800 dark:bg-violet-950 dark:text-violet-300 dark:hover:bg-violet-900"
+                          : "hover:bg-muted",
+                      )}
+                    >
+                      <FlaskConical
+                        className="h-4 w-4"
+                        aria-hidden="true"
+                      />
+  
+                      {isActive
+                        ? "Previewing impact"
+                        : "Preview impact"}
+                    </button>
                   </article>
                 );
               })}

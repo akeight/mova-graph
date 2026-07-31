@@ -35,12 +35,14 @@ type MovaGraphProps = {
   profile: StudentProfile;
   role: CareerRole;
   recommendations: NextMoveRecommendation[];
+  isScenarioPreview?: boolean;
 };
 
 export function MovaGraph({
   profile,
   role,
   recommendations,
+  isScenarioPreview = false,
 }: MovaGraphProps) {
   const graph = useMemo(() => {
     const studentGraph = buildStudentGraph(profile, role, recommendations);
@@ -99,13 +101,17 @@ export function MovaGraph({
     <section className="min-w-0 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">
-            Your opportunity map
-          </h2>
+        <h2 className="text-2xl font-semibold tracking-tight">
+  {isScenarioPreview
+    ? "Projected opportunity map"
+    : "Your opportunity map"}
+</h2>
 
-          <p className="text-sm text-muted-foreground">
-            See how your courses and experiences connect to {role.title}.
-          </p>
+<p className="text-sm text-muted-foreground">
+  {isScenarioPreview
+    ? `Preview how this move could change your path toward ${role.title}.`
+    : `See how your courses and experiences connect to ${role.title}.`}
+</p>
         </div>
 
         <button

@@ -17,10 +17,18 @@ import { RecommendationSummary } from
   "@/features/recommendations/components/recommendation-summary";
 import { generateRecommendations } from
   "@/features/recommendations/services/generate-recommendations";
+import type { NextMoveRecommendation } from
+  "@/features/recommendations/types/recommendation";
+import { ScenarioPreview } from
+  "@/features/scenario-simulator/components/scenario-preview";
+import { simulateRecommendation } from
+  "@/features/scenario-simulator/services/simulate-recommendation";
 import { StudentProfileForm } from
   "@/features/student-profile/components/student-profile-form";
 import type { StudentProfile } from
   "@/features/student-profile/types/student-profile";
+import { reconcileProfileSkills } from
+  "@/features/student-profile/utils/reconcile-profile-skills";
 
 import { sampleStudentProfile } from "../data/sample-student";
 import { MovaGraph } from "./mova-graph";
@@ -35,6 +43,11 @@ export function MovaWorkspace() {
 
   const [selectedRoleId, setSelectedRoleId] =
     useState(defaultCareerRoleId);
+
+  const [
+    activeRecommendationId,
+    setActiveRecommendationId,
+  ] = useState<string | null>(null);
 
   const selectedRole = useMemo(
     () => getCareerRole(selectedRoleId),
@@ -58,9 +71,87 @@ export function MovaWorkspace() {
     [readinessAssessment],
   );
 
+  const activeRecommendation = useMemo(
+    () =>
+      recommendations.find(
+        (recommendation) =>
+          recommendation.id ===
+          activeRecommendationId,
+      ) ?? null,
+    [
+      activeRecommendationId,
+      recommendations,
+    ],
+  );
+
+  const activeScenario = useMemo(
+    () =>
+      activeRecommendation
+        ? simulateRecommendation(
+            profile,
+            selectedRole,
+            activeRecommendation,
+          )
+        : null,
+    [
+      activeRecommendation,
+      profile,
+      selectedRole,
+    ],
+  );
+
+  const graphProfile = useMemo(
+    () =>
+      activeScenario
+        ? reconcileProfileSkills(
+            activeScenario.projectedProfile,
+          )
+        : profile,
+    [activeScenario, profile],
+  );
+
+  const graphRecommendations = useMemo(
+    () =>
+      activeScenario
+        ? recommendations.filter(
+            (recommendation) =>
+              recommendation.id !==
+              activeScenario.recommendation.id,
+          )
+        : recommendations,
+    [activeScenario, recommendations],
+  );
+
+  const handleProfileChange = (
+    nextProfile: StudentProfile,
+  ) => {
+    setProfile(nextProfile);
+    setActiveRecommendationId(null);
+  };
+
+  const handleRoleSelect = (
+    roleId: string,
+  ) => {
+    setSelectedRoleId(roleId);
+    setActiveRecommendationId(null);
+  };
+
+  const handleSimulate = (
+    recommendation: NextMoveRecommendation,
+  ) => {
+    setActiveRecommendationId(
+      (currentRecommendationId) =>
+        currentRecommendationId ===
+        recommendation.id
+          ? null
+          : recommendation.id,
+    );
+  };
+
   const restoreDemo = () => {
     setProfile(createDemoProfile());
     setSelectedRoleId(defaultCareerRoleId);
+    setActiveRecommendationId(null);
   };
 
   return (
@@ -68,13 +159,13 @@ export function MovaWorkspace() {
       <CareerRoleSelector
         roles={careerRoles}
         selectedRoleId={selectedRoleId}
-        onSelect={setSelectedRoleId}
+        onSelect={handleRoleSelect}
       />
 
       <div className="grid items-start gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
         <StudentProfileForm
           profile={profile}
-          onChange={setProfile}
+          onChange={handleProfileChange}
           onRestoreDemo={restoreDemo}
         />
 
@@ -87,12 +178,29 @@ export function MovaWorkspace() {
           <RecommendationSummary
             roleTitle={selectedRole.title}
             recommendations={recommendations}
+            activeRecommendationId={
+              activeRecommendationId
+            }
+            onSimulate={handleSimulate}
+          />
+
+          <ScenarioPreview
+            roleTitle={selectedRole.title}
+            scenario={activeScenario}
+            onClear={() =>
+              setActiveRecommendationId(null)
+            }
           />
 
           <MovaGraph
-            profile={profile}
+            profile={graphProfile}
             role={selectedRole}
-            recommendations={recommendations}
+            recommendations={
+              graphRecommendations
+            }
+            isScenarioPreview={
+              activeScenario !== null
+            }
           />
         </div>
       </div>

@@ -8,7 +8,11 @@ import {
   Target,
 } from "lucide-react";
 
-import { Handle, Position, type NodeProps } from "@xyflow/react";
+import {
+  Handle,
+  Position,
+  type NodeProps,
+} from "@xyflow/react";
 
 import { cn } from "@/lib/utils";
 
@@ -33,6 +37,7 @@ const categoryConfig = {
     iconClassName:
       "bg-violet-50 text-violet-700 dark:bg-violet-950 dark:text-violet-300",
   },
+
   course: {
     label: "Course",
     icon: BookOpen,
@@ -40,6 +45,7 @@ const categoryConfig = {
     iconClassName:
       "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
   },
+
   experience: {
     label: "Experience",
     icon: BriefcaseBusiness,
@@ -47,6 +53,7 @@ const categoryConfig = {
     iconClassName:
       "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
   },
+
   skill: {
     label: "Skill",
     icon: Sparkles,
@@ -54,6 +61,7 @@ const categoryConfig = {
     iconClassName:
       "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
   },
+
   role: {
     label: "Career role",
     icon: Target,
@@ -61,6 +69,7 @@ const categoryConfig = {
     iconClassName:
       "bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300",
   },
+
   recommendation: {
     label: "Next move",
     icon: Lightbulb,
@@ -81,17 +90,25 @@ const statusConfig: Record<
     label: "Complete",
     dotClassName: "bg-emerald-500",
   },
+
   "in-progress": {
     label: "In progress",
     dotClassName: "bg-amber-500",
   },
+
   missing: {
     label: "Missing",
     dotClassName: "bg-rose-500",
   },
+
   recommended: {
     label: "Recommended",
     dotClassName: "bg-blue-500",
+  },
+
+  scenario: {
+    label: "Scenario",
+    dotClassName: "bg-violet-500",
   },
 };
 
@@ -100,6 +117,7 @@ export function MovaNodeCard({
   selected,
 }: NodeProps<MovaNode>) {
   const category = categoryConfig[data.category];
+
   const status = data.status
     ? statusConfig[data.status]
     : undefined;
@@ -111,7 +129,8 @@ export function MovaNodeCard({
       className={cn(
         "relative flex h-[136px] w-64 flex-col rounded-2xl border-2 bg-background p-4 text-foreground shadow-sm transition-shadow",
         category.borderClassName,
-        selected && "ring-2 ring-primary/40 ring-offset-2 ring-offset-background",
+        selected &&
+          "ring-2 ring-primary/40 ring-offset-2 ring-offset-background",
       )}
     >
       <Handle
@@ -127,7 +146,10 @@ export function MovaNodeCard({
             category.iconClassName,
           )}
         >
-          <Icon className="h-5 w-5" aria-hidden="true" />
+          <Icon
+            className="h-5 w-5"
+            aria-hidden="true"
+          />
         </div>
 
         <div className="min-w-0 flex-1">
