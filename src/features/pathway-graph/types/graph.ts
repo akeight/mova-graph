@@ -11,6 +11,7 @@ export type MovaNodeCategory =
 export type MovaNodeStatus =
   | "complete"
   | "in-progress"
+  | "planned"
   | "missing"
   | "recommended"
   | "scenario";

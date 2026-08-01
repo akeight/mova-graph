@@ -3,16 +3,19 @@ import { z } from "zod";
 import { careerRoles } from
   "@/features/goals/data/career-roles";
 
-const courseProgressSchema = z.enum([
-  "completed",
-  "in-progress",
-  "planned",
-]);
-
-const experienceProgressSchema = z.enum([
-  "completed",
-  "in-progress",
-]);
+  const courseProgressSchema = z.enum([
+    "planned",
+    "in-progress",
+    "completed",
+    "dropped",
+  ]);
+  
+  const experienceProgressSchema = z.enum([
+    "planned",
+    "in-progress",
+    "completed",
+    "dropped",
+  ]);
 
 const skillProgressSchema = z.enum([
   "demonstrated",

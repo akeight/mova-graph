@@ -8,6 +8,8 @@ import type {
   StudentProfile,
   StudentSkill,
 } from "@/features/student-profile/types/student-profile";
+import { isProfileItemVisible } from
+  "@/features/student-profile/utils/profile-item-status";
 
 import type {
   MovaEdge,
@@ -23,19 +25,37 @@ const SCENARIO_EXPERIENCE_PREFIX =
 function getCourseNodeStatus(
   status: CourseProgress,
 ): MovaNodeStatus {
-  if (status === "completed") {
-    return "complete";
-  }
+  switch (status) {
+    case "completed":
+      return "complete";
 
-  return "in-progress";
+    case "in-progress":
+      return "in-progress";
+
+    case "planned":
+      return "planned";
+
+    case "dropped":
+      return "planned";
+  }
 }
 
 function getExperienceNodeStatus(
   status: ExperienceProgress,
 ): MovaNodeStatus {
-  return status === "completed"
-    ? "complete"
-    : "in-progress";
+  switch (status) {
+    case "completed":
+      return "complete";
+
+    case "in-progress":
+      return "in-progress";
+
+    case "planned":
+      return "planned";
+
+    case "dropped":
+      return "planned";
+  }
 }
 
 function getSkillNodeStatus(
@@ -74,6 +94,45 @@ function getCourseRelationship(
         label: "plans to take",
         relationship: "plans",
       };
+
+    case "dropped":
+      return {
+        label: "dropped",
+        relationship: "plans",
+      };
+  }
+}
+
+function getExperienceRelationship(
+  status: ExperienceProgress,
+): {
+  label: string;
+  relationship: MovaRelationship;
+} {
+  switch (status) {
+    case "completed":
+      return {
+        label: "completed",
+        relationship: "created",
+      };
+
+    case "in-progress":
+      return {
+        label: "working on",
+        relationship: "pursuing",
+      };
+
+    case "planned":
+      return {
+        label: "plans to pursue",
+        relationship: "plans",
+      };
+
+    case "dropped":
+      return {
+        label: "dropped",
+        relationship: "plans",
+      };
   }
 }
 
@@ -89,6 +148,7 @@ function createEdge(
     source,
     target,
     label,
+
     data: {
       relationship,
     },
@@ -103,8 +163,30 @@ export function buildStudentGraph(
   const nodes: MovaNode[] = [];
   const edges: MovaEdge[] = [];
 
-  const studentNodeId = `student-${profile.id}`;
-  const roleNodeId = `role-${role.id}`;
+  const studentNodeId =
+    `student-${profile.id}`;
+
+  const roleNodeId =
+    `role-${role.id}`;
+
+  /*
+   * Dropped courses and experiences remain in the saved
+   * profile but are excluded from the primary opportunity map.
+   */
+  const visibleCourses =
+    profile.courses.filter((course) =>
+      isProfileItemVisible(
+        course.status,
+      ),
+    );
+
+  const visibleExperiences =
+    profile.experiences.filter(
+      (experience) =>
+        isProfileItemVisible(
+          experience.status,
+        ),
+    );
 
   const studentSkillMap = new Map(
     profile.skills.map((skill) => [
@@ -114,62 +196,93 @@ export function buildStudentGraph(
   );
 
   const roleRequirementMap = new Map(
-    role.requirements.map((requirement) => [
-      requirement.skillId,
-      requirement,
-    ]),
+    role.requirements.map(
+      (requirement) => [
+        requirement.skillId,
+        requirement,
+      ],
+    ),
   );
 
-  const allSkillIds = new Set<string>();
+  /*
+   * Include skills from:
+   * - the reconciled student profile
+   * - visible courses
+   * - visible experiences
+   * - the selected role requirements
+   *
+   * Planned items remain visible in the graph, but their
+   * skills receive no readiness credit.
+   */
+  const allSkillIds =
+    new Set<string>();
 
   for (const skill of profile.skills) {
     allSkillIds.add(skill.id);
   }
 
-  for (const course of profile.courses) {
+  for (const course of visibleCourses) {
     for (const skillId of course.skillIds) {
       allSkillIds.add(skillId);
     }
   }
 
-  for (const experience of profile.experiences) {
-    for (const skillId of experience.skillIds) {
+  for (
+    const experience of
+    visibleExperiences
+  ) {
+    for (
+      const skillId of
+      experience.skillIds
+    ) {
       allSkillIds.add(skillId);
     }
   }
 
-  for (const requirement of role.requirements) {
-    allSkillIds.add(requirement.skillId);
+  for (
+    const requirement of
+    role.requirements
+  ) {
+    allSkillIds.add(
+      requirement.skillId,
+    );
   }
 
-  const skillIds = Array.from(allSkillIds);
+  const skillIds =
+    Array.from(allSkillIds);
 
   nodes.push({
     id: studentNodeId,
     type: "mova",
+
     position: {
       x: 0,
       y: 0,
     },
+
     data: {
       label: profile.name,
       category: "student",
       status: "in-progress",
+
       description:
-        profile.program ?? "Student profile",
+        profile.program ??
+        "Student profile",
     },
   });
 
   const activities = [
-    ...profile.courses.map((course) => ({
+    ...visibleCourses.map((course) => ({
       kind: "course" as const,
       item: course,
     })),
 
-    ...profile.experiences.map((experience) => ({
-      kind: "experience" as const,
-      item: experience,
-    })),
+    ...visibleExperiences.map(
+      (experience) => ({
+        kind: "experience" as const,
+        item: experience,
+      }),
+    ),
   ];
 
   activities.forEach((activity) => {
@@ -185,16 +298,23 @@ export function buildStudentGraph(
       nodes.push({
         id: nodeId,
         type: "mova",
+
         position: {
           x: 0,
           y: 0,
         },
+
         data: {
-          label: activity.item.title,
+          label:
+            activity.item.title,
+
           category: "course",
-          status: getCourseNodeStatus(
-            activity.item.status,
-          ),
+
+          status:
+            getCourseNodeStatus(
+              activity.item.status,
+            ),
+
           description:
             activity.item.description,
         },
@@ -210,7 +330,10 @@ export function buildStudentGraph(
         ),
       );
 
-      for (const skillId of activity.item.skillIds) {
+      for (
+        const skillId of
+        activity.item.skillIds
+      ) {
         edges.push(
           createEdge(
             `${nodeId}-skill-${skillId}`,
@@ -230,13 +353,27 @@ export function buildStudentGraph(
         SCENARIO_EXPERIENCE_PREFIX,
       );
 
+    const relationship =
+      isScenarioExperience
+        ? {
+            label: "could complete",
+
+            relationship:
+              "created" as MovaRelationship,
+          }
+        : getExperienceRelationship(
+            activity.item.status,
+          );
+
     nodes.push({
       id: nodeId,
       type: "mova",
+
       position: {
         x: 0,
         y: 0,
       },
+
       data: {
         label: activity.item.title,
         category: "experience",
@@ -247,13 +384,16 @@ export function buildStudentGraph(
               activity.item.status,
             ),
 
-        description: isScenarioExperience
-          ? [
-              "Hypothetical:",
-              activity.item.description ??
-                "Projected completed experience",
-            ].join(" ")
-          : activity.item.description,
+        description:
+          isScenarioExperience
+            ? [
+                "Hypothetical:",
+                activity.item
+                  .description ??
+                  "Projected completed experience",
+              ].join(" ")
+            : activity.item
+                .description,
       },
     });
 
@@ -262,29 +402,28 @@ export function buildStudentGraph(
         `${studentNodeId}-${nodeId}`,
         studentNodeId,
         nodeId,
-
-        isScenarioExperience
-          ? "could complete"
-          : activity.item.status ===
-              "completed"
-            ? "completed"
-            : "working on",
-
-        activity.item.status === "completed"
-          ? "created"
-          : "pursuing",
+        relationship.label,
+        relationship.relationship,
       ),
     );
 
-    for (const skillId of activity.item.skillIds) {
+    for (
+      const skillId of
+      activity.item.skillIds
+    ) {
+      const skillEdgeLabel =
+        isScenarioExperience ||
+        activity.item.status ===
+          "planned"
+          ? "could demonstrate"
+          : "demonstrates";
+
       edges.push(
         createEdge(
           `${nodeId}-skill-${skillId}`,
           nodeId,
           `skill-${skillId}`,
-          isScenarioExperience
-            ? "could demonstrate"
-            : "demonstrates",
+          skillEdgeLabel,
           "demonstrates",
         ),
       );
@@ -303,42 +442,64 @@ export function buildStudentGraph(
       roleRequirement?.skillName ??
       skillId;
 
+    let description =
+      "Connected student skill";
+
+    if (roleRequirement) {
+      description =
+        roleRequirement.importance ===
+        "required"
+          ? "Required for target role"
+          : "Preferred for target role";
+    } else if (
+      studentSkill?.status ===
+      "demonstrated"
+    ) {
+      description =
+        "Demonstrated student skill";
+    } else if (studentSkill) {
+      description =
+        "Developing student skill";
+    }
+
     nodes.push({
       id: `skill-${skillId}`,
       type: "mova",
+
       position: {
         x: 0,
         y: 0,
       },
+
       data: {
         label: skillName,
         category: "skill",
-        status:
-          getSkillNodeStatus(studentSkill),
 
-        description: roleRequirement
-          ? roleRequirement.importance ===
-            "required"
-            ? "Required for target role"
-            : "Preferred for target role"
-          : "Demonstrated student skill",
+        status:
+          getSkillNodeStatus(
+            studentSkill,
+          ),
+
+        description,
       },
     });
 
     if (roleRequirement) {
+      const isRequired =
+        roleRequirement.importance ===
+        "required";
+
       edges.push(
         createEdge(
           `skill-${skillId}-${roleNodeId}`,
           `skill-${skillId}`,
           roleNodeId,
 
-          roleRequirement.importance ===
-          "required"
+          isRequired
             ? "required by"
             : "preferred for",
 
-          roleRequirement.importance ===
-          "required"
+          isRequired
             ? "requires"
             : "supports",
         ),
@@ -349,10 +510,12 @@ export function buildStudentGraph(
   nodes.push({
     id: roleNodeId,
     type: "mova",
+
     position: {
       x: 0,
       y: 0,
     },
+
     data: {
       label: role.title,
       category: "role",
@@ -361,39 +524,48 @@ export function buildStudentGraph(
     },
   });
 
-  recommendations.forEach((recommendation) => {
-    const recommendationNodeId =
-      recommendation.id;
+  recommendations.forEach(
+    (recommendation) => {
+      const recommendationNodeId =
+        recommendation.id;
 
-    nodes.push({
-      id: recommendationNodeId,
-      type: "mova",
-      position: {
-        x: 0,
-        y: 0,
-      },
-      data: {
-        label: recommendation.title,
-        category: "recommendation",
-        status: "recommended",
+      nodes.push({
+        id: recommendationNodeId,
+        type: "mova",
 
-        description: [
-          recommendation.action,
-          `Estimated impact: +${recommendation.estimatedScoreIncrease} readiness points.`,
-        ].join(" "),
-      },
-    });
+        position: {
+          x: 0,
+          y: 0,
+        },
 
-    edges.push(
-      createEdge(
-        `${recommendationNodeId}-skill-${recommendation.skillId}`,
-        recommendationNodeId,
-        `skill-${recommendation.skillId}`,
-        "strengthens",
-        "strengthens",
-      ),
-    );
-  });
+        data: {
+          label:
+            recommendation.title,
+
+          category:
+            "recommendation",
+
+          status: "recommended",
+
+          description: [
+            recommendation.action,
+
+            `Estimated impact: +${recommendation.estimatedScoreIncrease} readiness points.`,
+          ].join(" "),
+        },
+      });
+
+      edges.push(
+        createEdge(
+          `${recommendationNodeId}-skill-${recommendation.skillId}`,
+          recommendationNodeId,
+          `skill-${recommendation.skillId}`,
+          "strengthens",
+          "strengthens",
+        ),
+      );
+    },
+  );
 
   return {
     nodes,
