@@ -96,6 +96,11 @@ const statusConfig: Record<
     dotClassName: "bg-amber-500",
   },
 
+  planned: {
+    label: "Planned",
+    dotClassName: "bg-sky-500",
+  },
+
   missing: {
     label: "Missing",
     dotClassName: "bg-rose-500",

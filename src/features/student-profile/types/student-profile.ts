@@ -1,11 +1,14 @@
 export type CourseProgress =
-  | "completed"
+  | "planned"
   | "in-progress"
-  | "planned";
+  | "completed"
+  | "dropped";
 
 export type ExperienceProgress =
+  | "planned"
+  | "in-progress"
   | "completed"
-  | "in-progress";
+  | "dropped";
 
 export type SkillProgress =
   | "demonstrated"
