@@ -14,8 +14,15 @@ export type PersistedWorkspace =
     updatedAt: string;
   };
 
+export type WorkspaceHydrationStatus =
+  | "loading"
+  | "ready"
+  | "error"
+  | "local-only";
+
 export type WorkspaceSaveStatus =
   | "loading"
   | "saving"
   | "saved"
-  | "error";
+  | "error"
+  | "local-only";

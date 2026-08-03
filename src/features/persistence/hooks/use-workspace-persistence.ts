@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useState,
 } from "react";
@@ -17,6 +18,7 @@ import {
 
 import type {
   PersistedWorkspace,
+  WorkspaceHydrationStatus,
   WorkspaceSaveStatus,
 } from "../types/workspace";
 
@@ -39,8 +41,18 @@ export function useWorkspacePersistence({
   const [workspaceId, setWorkspaceId] =
     useState<string | null>(null);
 
-  const [hasHydrated, setHasHydrated] =
-    useState(false);
+  const [
+    hydrationStatus,
+    setHydrationStatus,
+  ] =
+    useState<WorkspaceHydrationStatus>(
+      "loading",
+    );
+
+  const [
+    hydrationAttempt,
+    setHydrationAttempt,
+  ] = useState(0);
 
   const [status, setStatus] =
     useState<WorkspaceSaveStatus>(
@@ -53,12 +65,42 @@ export function useWorkspacePersistence({
   const [error, setError] =
     useState<string | null>(null);
 
+  const retryHydration =
+    useCallback(() => {
+      setHydrationStatus("loading");
+      setStatus("loading");
+      setError(null);
+
+      setHydrationAttempt(
+        (currentAttempt) =>
+          currentAttempt + 1,
+      );
+    }, []);
+
+  const continueWithoutPersistence =
+    useCallback(() => {
+      setHydrationStatus(
+        "local-only",
+      );
+
+      setStatus("local-only");
+      setLastSavedAt(null);
+      setError(null);
+    }, []);
+
   useEffect(() => {
     const controller =
       new AbortController();
 
     const hydrateWorkspace =
       async () => {
+        setHydrationStatus(
+          "loading",
+        );
+
+        setStatus("loading");
+        setError(null);
+
         const nextWorkspaceId =
           getOrCreateWorkspaceId();
 
@@ -81,6 +123,10 @@ export function useWorkspacePersistence({
             ),
           );
 
+          setHydrationStatus(
+            "ready",
+          );
+
           setStatus("saved");
         } catch (caughtError) {
           if (
@@ -93,22 +139,44 @@ export function useWorkspacePersistence({
             caughtError instanceof
             WorkspaceNotFoundError
           ) {
-            setStatus("saved");
-          } else {
-            setStatus("error");
+            /*
+             * A 404 is expected for a brand-new
+             * anonymous workspace.
+             *
+             * The initial profile may now be saved
+             * safely because we know there is no
+             * existing remote workspace to overwrite.
+             */
+            setLastSavedAt(null);
 
-            setError(
-              caughtError instanceof Error
-                ? caughtError.message
-                : "Mova could not load your saved workspace.",
+            setHydrationStatus(
+              "ready",
             );
+
+            setStatus("saved");
+
+            return;
           }
-        } finally {
-          if (
-            !controller.signal.aborted
-          ) {
-            setHasHydrated(true);
-          }
+
+          /*
+           * Do not mark hydration as ready after a
+           * network, server, or database error.
+           *
+           * Autosave remains disabled until the user
+           * retries successfully or explicitly enters
+           * local demo mode.
+           */
+          setHydrationStatus(
+            "error",
+          );
+
+          setStatus("error");
+
+          setError(
+            caughtError instanceof Error
+              ? caughtError.message
+              : "Mova could not load your saved workspace.",
+          );
         }
       };
 
@@ -117,12 +185,15 @@ export function useWorkspacePersistence({
     return () => {
       controller.abort();
     };
-  }, [onHydrate]);
+  }, [
+    hydrationAttempt,
+    onHydrate,
+  ]);
 
   useEffect(() => {
     if (
       !workspaceId ||
-      !hasHydrated
+      hydrationStatus !== "ready"
     ) {
       return;
     }
@@ -182,15 +253,18 @@ export function useWorkspacePersistence({
       controller.abort();
     };
   }, [
-    hasHydrated,
+    hydrationStatus,
     profile,
     selectedRoleId,
     workspaceId,
   ]);
 
   return {
+    hydrationStatus,
     status,
     lastSavedAt,
     error,
+    retryHydration,
+    continueWithoutPersistence,
   };
 }
