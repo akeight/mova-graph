@@ -14,6 +14,11 @@ import {
   getCareerRole,
 } from "@/features/goals/data/career-roles";
 
+import {
+  WorkspaceLoadError,
+  WorkspaceLoadingState,
+} from "@/features/persistence/components/workspace-load-state";
+
 import { WorkspaceSaveStatus } from
   "@/features/persistence/components/workspace-save-status";
 import { useWorkspacePersistence } from
@@ -257,6 +262,30 @@ export function MovaWorkspace() {
       null,
     );
   };
+  
+  if (
+    persistence.hydrationStatus ===
+    "loading"
+  ) {
+    return <WorkspaceLoadingState />;
+  }
+  
+  if (
+    persistence.hydrationStatus ===
+    "error"
+  ) {
+    return (
+      <WorkspaceLoadError
+        error={persistence.error}
+        onRetry={
+          persistence.retryHydration
+        }
+        onContinueLocally={
+          persistence.continueWithoutPersistence
+        }
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
