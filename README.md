@@ -659,14 +659,6 @@ Mova should be:
 
 Mova is currently a hackathon project under active development.
 
-Before contributing:
-
-1. Create or select a GitHub issue.
-2. Create a focused feature branch.
-3. Keep changes within the issue’s scope.
-4. Run `bun run validate`.
-5. Open a pull request with a clear summary and testing notes.
-
 ## License
 
 This project is licensed under the MIT License.
