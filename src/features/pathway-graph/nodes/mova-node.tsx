@@ -58,6 +58,13 @@ const categoryConfig = {
     iconClassName: "bg-category-skill/12 text-category-skill",
   },
 
+  competency: {
+    label: "Competency",
+    icon: Target,
+    borderClassName: "border-category-skill/70",
+    iconClassName: "bg-category-skill/12 text-category-skill",
+  },
+
   role: {
     label: "Career role",
     icon: Target,
@@ -93,6 +100,11 @@ const statusConfig: Record<
 
   planned: {
     label: "Planned",
+    dotClassName: "bg-info",
+  },
+
+  "not-explored": {
+    label: "Not explored",
     dotClassName: "bg-info",
   },
 

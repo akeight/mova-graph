@@ -5,6 +5,7 @@ export type MovaNodeCategory =
   | "course"
   | "experience"
   | "skill"
+  | "competency"
   | "role"
   | "recommendation";
 
@@ -12,6 +13,7 @@ export type MovaNodeStatus =
   | "complete"
   | "in-progress"
   | "planned"
+  | "not-explored"
   | "missing"
   | "recommended"
   | "scenario";

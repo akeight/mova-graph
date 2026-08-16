@@ -1,26 +1,74 @@
-import type {
-    SkillImportance,
-  } from "@/features/goals/types/career-role";
-  
-  export type ReadinessStatus =
-    | "demonstrated"
-    | "developing"
-    | "missing";
-  
-  export type RequirementReadiness = {
-    skillId: string;
-    skillName: string;
-    importance: SkillImportance;
-    status: ReadinessStatus;
-    weight: number;
-    earnedWeight: number;
-  };
-  
-  export type ReadinessAssessment = {
-    score: number;
-    demonstratedCount: number;
-    developingCount: number;
-    missingCount: number;
-    totalRequirements: number;
-    requirements: RequirementReadiness[];
-  };
+import type { CareerCompetencyTier } from "@/features/goals/types/career-role";
+
+export type EvidenceStatus =
+  | "demonstrated"
+  | "developing"
+  | "missing";
+
+export type DisplayStatus =
+  | "demonstrated"
+  | "developing"
+  | "missing"
+  | "not-explored";
+
+export type EvidenceMatchStatus = "demonstrated" | "developing";
+
+export type EvidenceMatch = {
+  skillId: string;
+  skillName: string;
+  status: EvidenceMatchStatus;
+};
+
+export type GroupEvaluation = {
+  groupId: string;
+  status: EvidenceStatus;
+  credit: 1 | 0.5 | 0;
+  matchedEvidence: EvidenceMatch[];
+};
+
+export type CompetencyEvidenceEvaluation = {
+  evidenceStatus: EvidenceStatus;
+  groups: GroupEvaluation[];
+  matchedEvidence: EvidenceMatch[];
+  groupProgress: number;
+  competencyCredit: number;
+};
+
+export type CompetencyReadiness = {
+  competencyId: string;
+  competencyName: string;
+  description: string;
+  tier: CareerCompetencyTier;
+  specializationGroup?: string;
+  evidenceStatus: EvidenceStatus;
+  displayStatus: DisplayStatus;
+  competencyCredit: number;
+  groups: GroupEvaluation[];
+  matchedEvidence: EvidenceMatch[];
+};
+
+export type TierSummary = {
+  demonstratedCount: number;
+  developingCount: number;
+  missingCount: number;
+  notExploredCount: number;
+  total: number;
+  coverage: number;
+};
+
+export type ReadinessAssessment = {
+  score: number;
+  coreCoverage: number;
+  commonCoverage: number;
+  demonstratedCount: number;
+  developingCount: number;
+  missingCount: number;
+  totalCompetencies: number;
+  competencies: CompetencyReadiness[];
+  core: TierSummary;
+  common: TierSummary;
+  specialized: TierSummary;
+};
+
+export const CORE_SCORE_WEIGHT = 0.6;
+export const COMMON_SCORE_WEIGHT = 0.4;

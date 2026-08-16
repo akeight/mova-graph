@@ -1,37 +1,23 @@
 import type { CareerRole } from "../types/career-role";
 
+import { getCompetencyDefinition } from "./competencies";
+
 export const careerRoles = [
   {
     id: "product-engineer",
     title: "Product Engineer",
     description:
       "Build polished, user-centered products across design and engineering.",
-    requirements: [
-      {
-        skillId: "typescript",
-        skillName: "TypeScript",
-        importance: "required",
-      },
-      {
-        skillId: "react",
-        skillName: "React",
-        importance: "required",
-      },
-      {
-        skillId: "product-thinking",
-        skillName: "Product Thinking",
-        importance: "required",
-      },
-      {
-        skillId: "design-systems",
-        skillName: "Design Systems",
-        importance: "preferred",
-      },
-      {
-        skillId: "user-experience",
-        skillName: "User Experience",
-        importance: "preferred",
-      },
+    modelVersion: 2,
+    competencies: [
+      { competencyId: "product-judgment", tier: "core" },
+      { competencyId: "user-facing-engineering", tier: "core" },
+      { competencyId: "end-to-end-ownership", tier: "core" },
+      { competencyId: "application-data-and-apis", tier: "common" },
+      { competencyId: "software-quality", tier: "common" },
+      { competencyId: "ux-design-fluency", tier: "common" },
+      { competencyId: "design-systems", tier: "specialized" },
+      { competencyId: "application-performance", tier: "specialized" },
     ],
   },
   {
@@ -39,32 +25,22 @@ export const careerRoles = [
     title: "Frontend Engineer",
     description:
       "Build accessible, responsive, and maintainable web interfaces.",
-    requirements: [
+    modelVersion: 2,
+    competencies: [
       {
-        skillId: "typescript",
-        skillName: "TypeScript",
-        importance: "required",
+        competencyId: "frontend-application-engineering",
+        tier: "core",
       },
       {
-        skillId: "react",
-        skillName: "React",
-        importance: "required",
+        competencyId: "web-interface-implementation",
+        tier: "core",
       },
-      {
-        skillId: "html-css",
-        skillName: "HTML and CSS",
-        importance: "required",
-      },
-      {
-        skillId: "accessibility",
-        skillName: "Accessibility",
-        importance: "required",
-      },
-      {
-        skillId: "testing",
-        skillName: "Frontend Testing",
-        importance: "preferred",
-      },
+      { competencyId: "ux-design-fluency", tier: "core" },
+      { competencyId: "accessibility", tier: "common" },
+      { competencyId: "software-quality", tier: "common" },
+      { competencyId: "api-consumption", tier: "common" },
+      { competencyId: "application-performance", tier: "common" },
+      { competencyId: "design-systems", tier: "specialized" },
     ],
   },
   {
@@ -72,31 +48,25 @@ export const careerRoles = [
     title: "Mobile Engineer",
     description:
       "Create reliable and intuitive applications for mobile devices.",
-    requirements: [
+    modelVersion: 2,
+    competencies: [
       {
-        skillId: "mobile-development",
-        skillName: "Mobile Development",
-        importance: "required",
+        competencyId: "mobile-application-development",
+        tier: "core",
+      },
+      { competencyId: "software-quality", tier: "core" },
+      { competencyId: "mobile-api-networking", tier: "core" },
+      { competencyId: "mobile-ux", tier: "common" },
+      { competencyId: "application-performance", tier: "common" },
+      {
+        competencyId: "ios-development-specialization",
+        tier: "specialized",
+        specializationGroup: "mobile-platform",
       },
       {
-        skillId: "software-testing",
-        skillName: "Software Testing",
-        importance: "required",
-      },
-      {
-        skillId: "api-integration",
-        skillName: "API Integration",
-        importance: "required",
-      },
-      {
-        skillId: "user-experience",
-        skillName: "User Experience",
-        importance: "preferred",
-      },
-      {
-        skillId: "performance",
-        skillName: "Application Performance",
-        importance: "preferred",
+        competencyId: "android-development-specialization",
+        tier: "specialized",
+        specializationGroup: "mobile-platform",
       },
     ],
   },
@@ -105,43 +75,36 @@ export const careerRoles = [
     title: "Full-Stack Engineer",
     description:
       "Develop complete applications across frontend, backend, and data systems.",
-    requirements: [
+    modelVersion: 2,
+    competencies: [
       {
-        skillId: "typescript",
-        skillName: "TypeScript",
-        importance: "required",
+        competencyId: "frontend-application-engineering",
+        tier: "core",
       },
+      { competencyId: "backend-api-development", tier: "core" },
+      { competencyId: "data-database-development", tier: "core" },
+      { competencyId: "software-quality", tier: "common" },
+      { competencyId: "production-delivery", tier: "common" },
       {
-        skillId: "react",
-        skillName: "React",
-        importance: "required",
+        competencyId: "user-centered-development",
+        tier: "common",
       },
-      {
-        skillId: "postgresql",
-        skillName: "PostgreSQL",
-        importance: "required",
-      },
-      {
-        skillId: "api-design",
-        skillName: "API Design",
-        importance: "required",
-      },
-      {
-        skillId: "deployment",
-        skillName: "Deployment",
-        importance: "preferred",
-      },
+      { competencyId: "cloud-platforms", tier: "specialized" },
     ],
   },
 ] satisfies CareerRole[];
 
 export const defaultCareerRoleId = "product-engineer";
 
-export function getCareerRole(
-  roleId: string,
-): CareerRole {
+export function getCareerRole(roleId: string): CareerRole {
   return (
-    careerRoles.find((role) => role.id === roleId) ??
-    careerRoles[0]
+    careerRoles.find((role) => role.id === roleId) ?? careerRoles[0]
   );
+}
+
+export function resolveRoleCompetencies(role: CareerRole) {
+  return role.competencies.map((assignment) => ({
+    assignment,
+    definition: getCompetencyDefinition(assignment.competencyId),
+  }));
 }

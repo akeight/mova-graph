@@ -21,7 +21,7 @@ export function SkillGapsView({
         </h1>
 
         <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          See which of {role.title}&apos;s requirements you can
+          See which of {role.title}&apos;s competencies you can
           demonstrate today and where gaps remain.
         </p>
       </header>

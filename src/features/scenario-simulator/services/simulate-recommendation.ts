@@ -1,98 +1,39 @@
 import type { CareerRole } from "@/features/goals/types/career-role";
 import { calculateReadiness } from "@/features/readiness/services/calculate-readiness";
-import type { RequirementReadiness } from "@/features/readiness/types/readiness";
+import type { CompetencyReadiness } from "@/features/readiness/types/readiness";
 import type { NextMoveRecommendation } from "@/features/recommendations/types/recommendation";
-import type {
-  StudentExperience,
-  StudentProfile,
-} from "@/features/student-profile/types/student-profile";
+import { applyEvidencePackageToProfile } from "@/features/student-profile/services/apply-evidence-package";
+import type { StudentProfile } from "@/features/student-profile/types/student-profile";
 
 import type { RecommendationScenarioResult } from "../types/scenario";
 
-const SCENARIO_EXPERIENCE_PREFIX =
-  "scenario-experience";
-
-function createScenarioExperience(
-  recommendation: NextMoveRecommendation,
-): StudentExperience {
-  return {
-    id: [
-      SCENARIO_EXPERIENCE_PREFIX,
-      recommendation.skillId,
-    ].join("-"),
-
-    title: recommendation.title,
-    description: recommendation.action,
-    status: "completed",
-    skillIds: [recommendation.skillId],
-  };
-}
-
-function cloneProfile(
-  profile: StudentProfile,
-): StudentProfile {
-  return {
-    ...profile,
-
-    courses: profile.courses.map((course) => ({
-      ...course,
-      skillIds: [...course.skillIds],
-    })),
-
-    experiences: profile.experiences.map(
-      (experience) => ({
-        ...experience,
-        skillIds: [...experience.skillIds],
-      }),
-    ),
-
-    skills: profile.skills.map((skill) => ({
-      ...skill,
-    })),
-  };
-}
-
-function getRequirement(
-  requirements: RequirementReadiness[],
-  skillId: string,
-): RequirementReadiness {
-  const requirement = requirements.find(
-    (currentRequirement) =>
-      currentRequirement.skillId === skillId,
+function getCompetency(
+  competencies: CompetencyReadiness[],
+  competencyId: string,
+): CompetencyReadiness {
+  const competency = competencies.find(
+    (current) => current.competencyId === competencyId,
   );
 
-  if (!requirement) {
+  if (!competency) {
     throw new Error(
-      `Cannot simulate a recommendation for unknown role skill "${skillId}".`,
+      `Cannot simulate a recommendation for unknown role competency "${competencyId}".`,
     );
   }
 
-  return requirement;
+  return competency;
 }
 
 export function applyRecommendationToProfile(
   profile: StudentProfile,
   recommendation: NextMoveRecommendation,
 ): StudentProfile {
-  const projectedProfile = cloneProfile(profile);
-
-  const scenarioExperience =
-    createScenarioExperience(recommendation);
-
-  const existingExperiencesWithoutScenario =
-    projectedProfile.experiences.filter(
-      (experience) =>
-        experience.id !== scenarioExperience.id,
-    );
-
-  return {
-    ...projectedProfile,
-
-    experiences: [
-      ...existingExperiencesWithoutScenario,
-      scenarioExperience,
-    ],
-  };
+  return applyEvidencePackageToProfile(profile, {
+    idSuffix: recommendation.competencyId,
+    title: recommendation.title,
+    description: recommendation.action,
+    skillIds: recommendation.suggestedEvidenceSkillIds,
+  });
 }
 
 export function simulateRecommendation(
@@ -100,58 +41,42 @@ export function simulateRecommendation(
   role: CareerRole,
   recommendation: NextMoveRecommendation,
 ): RecommendationScenarioResult {
-  const baselineAssessment =
-    calculateReadiness(profile, role);
-
-  const baselineRequirement = getRequirement(
-    baselineAssessment.requirements,
-    recommendation.skillId,
+  const baselineAssessment = calculateReadiness(profile, role);
+  const baselineCompetency = getCompetency(
+    baselineAssessment.competencies,
+    recommendation.competencyId,
   );
 
-  const projectedProfile =
-    applyRecommendationToProfile(
-      profile,
-      recommendation,
-    );
-
-  const projectedAssessment =
-    calculateReadiness(
-      projectedProfile,
-      role,
-    );
-
-  const projectedRequirement = getRequirement(
-    projectedAssessment.requirements,
-    recommendation.skillId,
+  const projectedProfile = applyRecommendationToProfile(
+    profile,
+    recommendation,
+  );
+  const projectedAssessment = calculateReadiness(
+    projectedProfile,
+    role,
+  );
+  const projectedCompetency = getCompetency(
+    projectedAssessment.competencies,
+    recommendation.competencyId,
   );
 
   return {
-    id: [
-      "scenario",
-      role.id,
-      recommendation.id,
-    ].join("-"),
-
+    id: ["scenario", role.id, recommendation.id].join("-"),
     recommendation,
     projectedProfile,
-
     baselineAssessment,
     projectedAssessment,
-
     scoreBefore: baselineAssessment.score,
     scoreAfter: projectedAssessment.score,
-
     scoreIncrease: Math.max(
       0,
-      projectedAssessment.score -
-        baselineAssessment.score,
+      projectedAssessment.score - baselineAssessment.score,
     ),
-
     statusChange: {
-      skillId: recommendation.skillId,
-      skillName: recommendation.skillName,
-      before: baselineRequirement.status,
-      after: projectedRequirement.status,
+      competencyId: recommendation.competencyId,
+      competencyName: recommendation.competencyName,
+      before: baselineCompetency.evidenceStatus,
+      after: projectedCompetency.evidenceStatus,
     },
   };
 }
