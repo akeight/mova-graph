@@ -89,7 +89,6 @@ export const rawProfileItemExtractionSchema =
             ),
         }),
       )
-      .min(1)
       .max(8),
   });
 

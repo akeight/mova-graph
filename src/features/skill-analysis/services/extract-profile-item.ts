@@ -44,6 +44,7 @@ ${catalog}
 
 Rules:
 - Return sourcePhrase values copied from or clearly present in the source text.
+- You may return zero evidence claims when the source contains no meaningful skills. Prefer an empty skills array over inventing evidence.
 - An evidence claim may have zero canonical mappings. Prefer zero mappings over forcing an uncertain or incorrect MOVa evidence ID.
 - If an important raw skill is supported but no catalog entry fits safely, preserve the raw phrase and return mappings: [].
 - Confidence is how strongly the source supports that evidence, not skill proficiency and not normalization certainty.

@@ -8,6 +8,13 @@ export const evidenceSkills = [
     description: "Typed JavaScript used to implement application code.",
   },
   {
+    id: "csharp",
+    name: "C#",
+    category: "technology",
+    aliases: ["c sharp"],
+    description: "Programming language used to build .NET applications.",
+  },
+  {
     id: "react",
     name: "React",
     category: "technology",
@@ -428,6 +435,7 @@ export function createEvidenceLookupKey(value: string): string {
   return value
     .trim()
     .toLowerCase()
+    .replace(/#/g, " sharp ")
     .replace(/&/g, " and ")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();

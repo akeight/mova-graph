@@ -45,7 +45,6 @@ function createUnmappedSkill(
 
 function acceptDirectMappings(
   claim: RawProfileItemExtraction["skills"][number],
-  sourceText: string,
 ): ExtractedSkill[] {
   const accepted: ExtractedSkill[] = [];
   const phraseResolution = resolveEvidenceTerm(claim.sourcePhrase);
@@ -58,7 +57,7 @@ function acceptDirectMappings(
     }
 
     if (requiresExplicitSourceGrounding(skill)) {
-      if (!isSkillGroundedInText(skill, sourceText)) {
+      if (!isSkillGroundedInText(skill, claim.sourcePhrase)) {
         continue;
       }
     }
@@ -84,6 +83,29 @@ function acceptDirectMappings(
   }
 
   return accepted;
+}
+
+function fromZeroMappingClaim(
+  claim: RawProfileItemExtraction["skills"][number],
+): ExtractedSkill[] {
+  const resolved = resolveEvidenceTerm(claim.sourcePhrase);
+
+  if (resolved.direct.method === "unmapped") {
+    return [
+      createUnmappedSkill(claim.sourcePhrase, claim.evidence),
+    ];
+  }
+
+  return withDerivedSkills({
+    id: resolved.direct.id,
+    name: resolved.direct.name,
+    sourcePhrase: claim.sourcePhrase.trim(),
+    confidence: 0,
+    evidence: claim.evidence.trim(),
+    normalizationMethod: resolved.direct.method,
+    provenance: "direct",
+    category: resolved.direct.category,
+  });
 }
 
 function withDerivedSkills(direct: ExtractedSkill): ExtractedSkill[] {
@@ -179,12 +201,14 @@ export function normalizeExtractedSkills(
       continue;
     }
 
-    const directs = acceptDirectMappings(claim, sourceText);
+    if (claim.mappings.length === 0) {
+      collected.push(...fromZeroMappingClaim(claim));
+      continue;
+    }
+
+    const directs = acceptDirectMappings(claim);
 
     if (directs.length === 0) {
-      collected.push(
-        createUnmappedSkill(claim.sourcePhrase, claim.evidence),
-      );
       continue;
     }
 

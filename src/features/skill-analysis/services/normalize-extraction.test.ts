@@ -25,6 +25,16 @@ describe("raw extraction schema", () => {
 
     expect(parsed.skills[0]?.mappings).toEqual([]);
   });
+
+  it("allows an extraction with zero evidence claims", () => {
+    const parsed = rawProfileItemExtractionSchema.parse({
+      title: "Unrelated activity",
+      description: "Attended a team social with no technical work described.",
+      skills: [],
+    });
+
+    expect(parsed.skills).toEqual([]);
+  });
 });
 
 describe("normalizeExtractedSkills", () => {
@@ -47,10 +57,70 @@ describe("normalizeExtractedSkills", () => {
       expect.objectContaining({
         id: "atlasflow",
         name: "AtlasFlow",
+        confidence: 0,
         normalizationMethod: "unmapped",
         provenance: "direct",
       }),
     ]);
+    expect(shouldPreselectExtractedSkill(skills[0]!)).toBe(false);
+  });
+
+  it("uses deterministic identity for empty mappings to known catalog terms", () => {
+    const postgres = normalizeExtractedSkills(
+      [
+        {
+          sourcePhrase: "Postgres",
+          evidence: "Stored application data in Postgres.",
+          mappings: [],
+        },
+      ],
+      "Stored application data in Postgres.",
+    );
+
+    expect(postgres.map((skill) => skill.id)).toEqual([
+      "postgresql",
+      "database-development",
+    ]);
+    expect(postgres[0]).toMatchObject({
+      id: "postgresql",
+      confidence: 0,
+      provenance: "direct",
+    });
+    expect(shouldPreselectExtractedSkill(postgres[0]!)).toBe(false);
+
+    const next = normalizeExtractedSkills(
+      [
+        {
+          sourcePhrase: "Next.js",
+          evidence: "Built a dashboard using Next.js.",
+          mappings: [],
+        },
+      ],
+      "Built a dashboard using Next.js.",
+    );
+
+    expect(next.map((skill) => skill.id)).toEqual([
+      "nextjs",
+      "react",
+      "frontend-development",
+    ]);
+    expect(next[0]?.confidence).toBe(0);
+    expect(shouldPreselectExtractedSkill(next[0]!)).toBe(false);
+
+    const ux = normalizeExtractedSkills(
+      [
+        {
+          sourcePhrase: "UX",
+          evidence: "Completed UX research.",
+          mappings: [],
+        },
+      ],
+      "Completed UX research for the dashboard.",
+    );
+
+    expect(ux.map((skill) => skill.id)).toEqual(["user-experience"]);
+    expect(ux[0]?.confidence).toBe(0);
+    expect(shouldPreselectExtractedSkill(ux[0]!)).toBe(false);
   });
 
   it("accepts valid registry IDs and drops fake IDs", () => {
@@ -166,19 +236,19 @@ describe("normalizeExtractedSkills", () => {
     expect(skills.map((skill) => skill.id)).toEqual(["api-integration"]);
   });
 
-  it("does not auto-create React, Express, or Swift from English words", () => {
+  it("does not turn rejected React, Express, or Swift mappings into unknown skills", () => {
     expect(
       normalizeExtractedSkills(
         [
           {
-            sourcePhrase: "I react quickly to user feedback.",
+            sourcePhrase: "I react quickly to user feedback",
             evidence: "I react quickly to user feedback.",
             mappings: [{ canonicalSkillId: "react", confidence: 0.99 }],
           },
         ],
         "I react quickly to user feedback when things break in production.",
-      ).map((skill) => skill.id),
-    ).not.toContain("react");
+      ),
+    ).toEqual([]);
 
     expect(
       normalizeExtractedSkills(
@@ -190,8 +260,8 @@ describe("normalizeExtractedSkills", () => {
           },
         ],
         "I learned to express technical ideas clearly during standups.",
-      ).map((skill) => skill.id),
-    ).not.toContain("express");
+      ),
+    ).toEqual([]);
 
     expect(
       normalizeExtractedSkills(
@@ -203,8 +273,23 @@ describe("normalizeExtractedSkills", () => {
           },
         ],
         "We needed a swift response to the issue after the outage.",
-      ).map((skill) => skill.id),
-    ).not.toContain("swift");
+      ),
+    ).toEqual([]);
+  });
+
+  it("drops a claim when every mapping ID is fake", () => {
+    const skills = normalizeExtractedSkills(
+      [
+        {
+          sourcePhrase: "Built internal workflows using AtlasFlow",
+          evidence: "Built internal workflows using AtlasFlow.",
+          mappings: [{ canonicalSkillId: "wizardry", confidence: 0.99 }],
+        },
+      ],
+      "Built internal workflows using AtlasFlow last semester.",
+    );
+
+    expect(skills).toEqual([]);
   });
 
   it("does not independently add omitted technologies from scanning", () => {
@@ -216,6 +301,31 @@ describe("normalizeExtractedSkills", () => {
           sourcePhrase: "chose Vue",
           evidence: "We considered React but chose Vue.",
           mappings: [{ canonicalSkillId: "vue", confidence: 0.94 }],
+        },
+      ],
+      source,
+    );
+
+    expect(skills.map((skill) => skill.id)).toEqual([
+      "vue",
+      "frontend-development",
+    ]);
+    expect(skills.map((skill) => skill.id)).not.toContain("react");
+  });
+
+  it("grounds technology mappings against the claim phrase, not the full source", () => {
+    const source =
+      "We considered React early, but built the final application in Vue.";
+
+    const skills = normalizeExtractedSkills(
+      [
+        {
+          sourcePhrase: "built the final application in Vue",
+          evidence: source,
+          mappings: [
+            { canonicalSkillId: "react", confidence: 0.99 },
+            { canonicalSkillId: "vue", confidence: 0.94 },
+          ],
         },
       ],
       source,
@@ -351,5 +461,19 @@ describe("normalizeProfileItemExtraction", () => {
       "postgresql",
       "database-development",
     ]);
+  });
+
+  it("returns no skills for a zero-claim extraction", () => {
+    const result = normalizeProfileItemExtraction(
+      "experience",
+      {
+        title: "Team social",
+        description: "Attended a social event with no technical work.",
+        skills: [],
+      },
+      "Attended a team social with no technical work described in detail.",
+    );
+
+    expect(result.skills).toEqual([]);
   });
 });

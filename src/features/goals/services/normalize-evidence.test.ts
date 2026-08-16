@@ -69,6 +69,14 @@ describe("resolveEvidenceTerm", () => {
       "aspnet-core",
     );
   });
+
+  it("resolves C# to csharp instead of an unknown c slug", () => {
+    expect(resolveEvidenceTerm("C#").direct).toMatchObject({
+      id: "csharp",
+      name: "C#",
+    });
+    expect(resolveEvidenceTerm("C").direct.id).not.toBe("csharp");
+  });
 });
 
 describe("normalizeEvidenceNames", () => {
@@ -92,6 +100,7 @@ describe("normalizeEvidenceNames", () => {
     ["Automated Testing", ["automated-testing", "software-testing"]],
     ["xUnit", ["xunit", "software-testing"]],
     ["Vitest", ["vitest", "software-testing"]],
+    ["C#", ["csharp"]],
     ["Express", ["express", "backend-development"]],
     ["FastAPI", ["fastapi", "backend-development", "api-development"]],
     ["SomeNewFramework", ["somenewframework"]],
