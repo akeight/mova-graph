@@ -212,7 +212,7 @@ export function DashboardView({
                 </span>
 
                 <span className="rounded-full border bg-background px-2.5 py-1 capitalize text-muted-foreground">
-                  {bestMove.importance} skill
+                  {bestMove.tier} competency
                 </span>
               </div>
 
@@ -230,7 +230,7 @@ export function DashboardView({
             </>
           ) : (
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-              Every modeled requirement for {role.title} is
+              Every modeled core and common competency for {role.title} is
               covered. Explore the Career Map to see how your
               work connects.
             </p>
@@ -270,7 +270,7 @@ export function DashboardView({
                     />
 
                     <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-                      {gap.skillName}
+                      {gap.competencyName}
                     </span>
 
                     <span

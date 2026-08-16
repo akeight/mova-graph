@@ -74,12 +74,12 @@ import {
               </p>
   
               <h2 className="mt-1 text-xl font-semibold">
-                Your modeled requirements are covered
+                Your modeled competencies are covered
               </h2>
   
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                 Mova did not identify any missing or developing
-                skills for {roleTitle}.
+                core or common competencies for {roleTitle}.
               </p>
             </div>
           </div>
@@ -174,7 +174,7 @@ import {
   
           <div className="mt-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
             <span className="rounded-full border bg-background px-2.5 py-1 capitalize">
-              {bestRecommendation.importance} skill
+              {bestRecommendation.tier} competency
             </span>
   
             <span className="rounded-full border bg-background px-2.5 py-1 capitalize">
@@ -245,7 +245,7 @@ import {
                           </h4>
   
                           <p className="mt-1 text-xs text-muted-foreground">
-                            {recommendation.skillName}
+                            {recommendation.competencyName}
                           </p>
                         </div>
                       </div>

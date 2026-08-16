@@ -213,10 +213,11 @@ export function MovaWorkspace({
 
   const recommendations = useMemo(
     () =>
-      generateRecommendations(
-        readinessAssessment,
-      ),
-    [readinessAssessment],
+      generateRecommendations({
+        profile,
+        role: selectedRole,
+      }),
+    [profile, selectedRole],
   );
 
   const activeRecommendation =

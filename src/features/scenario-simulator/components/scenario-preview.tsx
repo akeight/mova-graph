@@ -8,7 +8,7 @@ import {
   
   import { cn } from "@/lib/utils";
   
-  import type { ReadinessStatus } from
+  import type { EvidenceStatus } from
     "@/features/readiness/types/readiness";
   
   import type { RecommendationScenarioResult } from
@@ -21,7 +21,7 @@ import {
   };
   
   const statusConfig: Record<
-    ReadinessStatus,
+    EvidenceStatus,
     {
       label: string;
       className: string;
@@ -159,12 +159,12 @@ import {
   
         <div className="mt-5 rounded-xl border bg-background p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-            Skill impact
+            Competency impact
           </p>
   
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <p className="font-semibold">
-              {scenario.statusChange.skillName}
+              {scenario.statusChange.competencyName}
             </p>
   
             <span

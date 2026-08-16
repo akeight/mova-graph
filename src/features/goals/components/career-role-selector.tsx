@@ -4,12 +4,19 @@ import { Check, Target } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-import type { CareerRole } from "../types/career-role";
+import { getCompetencyDefinition } from "../data/competencies";
+import type { CareerCompetencyTier, CareerRole } from "../types/career-role";
 
 type CareerRoleSelectorProps = {
   roles: CareerRole[];
   selectedRoleId: string;
   onSelect: (roleId: string) => void;
+};
+
+const TIER_LABELS: Record<CareerCompetencyTier, string> = {
+  core: "Core",
+  common: "Common",
+  specialized: "Specialized",
 };
 
 export function CareerRoleSelector({
@@ -18,16 +25,19 @@ export function CareerRoleSelector({
   onSelect,
 }: CareerRoleSelectorProps) {
   const selectedRole =
-    roles.find((role) => role.id === selectedRoleId) ??
-    roles[0];
+    roles.find((role) => role.id === selectedRoleId) ?? roles[0];
 
-  const requiredSkills = selectedRole.requirements.filter(
-    (requirement) => requirement.importance === "required",
-  );
-
-  const preferredSkills = selectedRole.requirements.filter(
-    (requirement) => requirement.importance === "preferred",
-  );
+  const competenciesByTier = {
+    core: selectedRole.competencies.filter(
+      (assignment) => assignment.tier === "core",
+    ),
+    common: selectedRole.competencies.filter(
+      (assignment) => assignment.tier === "common",
+    ),
+    specialized: selectedRole.competencies.filter(
+      (assignment) => assignment.tier === "specialized",
+    ),
+  };
 
   return (
     <section className="rounded-2xl border bg-card p-5 shadow-sm">
@@ -42,7 +52,8 @@ export function CareerRoleSelector({
           </h2>
 
           <p className="mt-1 text-sm text-muted-foreground">
-            Choose a role to compare against your current experience.
+            Choose a career type. Readiness measures preparation for
+            this kind of work, not a match to one employer&apos;s stack.
           </p>
         </div>
       </div>
@@ -53,6 +64,9 @@ export function CareerRoleSelector({
       >
         {roles.map((role) => {
           const isSelected = role.id === selectedRoleId;
+          const coreCount = role.competencies.filter(
+            (assignment) => assignment.tier === "core",
+          ).length;
 
           return (
             <button
@@ -86,13 +100,7 @@ export function CareerRoleSelector({
               </p>
 
               <p className="mt-3 text-[11px] font-medium text-muted-foreground">
-                {
-                  role.requirements.filter(
-                    (requirement) =>
-                      requirement.importance === "required",
-                  ).length
-                }{" "}
-                required skills
+                {coreCount} core competencies
               </p>
             </button>
           );
@@ -112,48 +120,52 @@ export function CareerRoleSelector({
           <p className="mt-1 text-sm text-muted-foreground">
             {selectedRole.description}
           </p>
+
+          <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+            Core is foundational for this career type. Common is
+            frequently valuable across roles. Specialized varies by
+            company, stack, or focus.
+          </p>
         </div>
 
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <div>
-            <p className="text-xs font-semibold">
-              Required skills
-            </p>
+        <div className="mt-4 grid gap-4 md:grid-cols-3">
+          {(["core", "common", "specialized"] as const).map((tier) => {
+            const assignments = competenciesByTier[tier];
 
-            <div className="mt-2 flex flex-wrap gap-2">
-              {requiredSkills.map((requirement) => (
-                <span
-                  key={requirement.skillId}
-                  className="rounded-full border border-category-role/30 bg-category-role/10 px-2.5 py-1 text-xs font-medium text-category-role"
-                >
-                  {requirement.skillName}
-                </span>
-              ))}
-            </div>
-          </div>
+            return (
+              <div key={tier}>
+                <p className="text-xs font-semibold">
+                  {TIER_LABELS[tier]}
+                </p>
 
-          <div>
-            <p className="text-xs font-semibold">
-              Preferred skills
-            </p>
-
-            {preferredSkills.length > 0 ? (
-              <div className="mt-2 flex flex-wrap gap-2">
-                {preferredSkills.map((requirement) => (
-                  <span
-                    key={requirement.skillId}
-                    className="rounded-full border bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground"
-                  >
-                    {requirement.skillName}
-                  </span>
-                ))}
+                {assignments.length > 0 ? (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {assignments.map((assignment) => (
+                      <span
+                        key={assignment.competencyId}
+                        className={cn(
+                          "rounded-full border px-2.5 py-1 text-xs font-medium",
+                          tier === "core"
+                            ? "border-category-role/30 bg-category-role/10 text-category-role"
+                            : "border bg-background text-muted-foreground",
+                        )}
+                      >
+                        {
+                          getCompetencyDefinition(
+                            assignment.competencyId,
+                          ).name
+                        }
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    None listed.
+                  </p>
+                )}
               </div>
-            ) : (
-              <p className="mt-2 text-xs text-muted-foreground">
-                No preferred skills listed.
-              </p>
-            )}
-          </div>
+            );
+          })}
         </div>
       </div>
     </section>

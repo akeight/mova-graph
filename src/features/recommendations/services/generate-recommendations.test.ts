@@ -1,215 +1,123 @@
-import {
-    describe,
-    expect,
-    it,
-  } from "vitest";
-  
-  import type { ReadinessAssessment } from "@/features/readiness/types/readiness";
-  
-  import { generateRecommendations } from "./generate-recommendations";
-  
-  const assessment: ReadinessAssessment = {
-    score: 44,
-    demonstratedCount: 1,
-    developingCount: 2,
-    missingCount: 2,
-    totalRequirements: 5,
-  
-    requirements: [
-      {
-        skillId: "typescript",
-        skillName: "TypeScript",
-        importance: "required",
-        status: "demonstrated",
-        weight: 2,
-        earnedWeight: 2,
-      },
-      {
-        skillId: "product-thinking",
-        skillName: "Product Thinking",
-        importance: "required",
-        status: "missing",
-        weight: 2,
-        earnedWeight: 0,
-      },
-      {
-        skillId: "react",
-        skillName: "React",
-        importance: "required",
-        status: "developing",
-        weight: 2,
-        earnedWeight: 1,
-      },
-      {
-        skillId: "design-systems",
-        skillName: "Design Systems",
-        importance: "preferred",
-        status: "missing",
-        weight: 1,
-        earnedWeight: 0,
-      },
-      {
-        skillId: "user-experience",
-        skillName: "User Experience",
-        importance: "preferred",
-        status: "developing",
-        weight: 1,
-        earnedWeight: 0.5,
-      },
-    ],
+import { describe, expect, it } from "vitest";
+
+import { getCareerRole } from "@/features/goals/data/career-roles";
+import { calculateReadiness } from "@/features/readiness/services/calculate-readiness";
+import { applyEvidencePackageToProfile } from "@/features/student-profile/services/apply-evidence-package";
+import type { StudentProfile } from "@/features/student-profile/types/student-profile";
+
+import { generateRecommendations } from "./generate-recommendations";
+
+function profileWithSkills(
+  skills: Array<{ id: string; status: "demonstrated" | "developing" }>,
+): StudentProfile {
+  return {
+    id: "student",
+    name: "Student",
+    courses: skills.map((skill) => ({
+      id: `${skill.id}-course`,
+      title: skill.id,
+      status:
+        skill.status === "demonstrated" ? "completed" : "in-progress",
+      skillIds: [skill.id],
+    })),
+    experiences: [],
+    skills: skills.map((skill) => ({
+      id: skill.id,
+      name: skill.id,
+      status: skill.status,
+    })),
   };
-  
-  describe("generateRecommendations", () => {
-    it("ranks gaps by importance and readiness status", () => {
-      const recommendations =
-        generateRecommendations(assessment, {
-          limit: 10,
-        });
-  
-      expect(
-        recommendations.map(
-          (recommendation) =>
-            recommendation.skillId,
-        ),
-      ).toEqual([
-        "product-thinking",
-        "react",
-        "design-systems",
-        "user-experience",
-      ]);
-  
-      expect(
-        recommendations.map(
-          (recommendation) =>
-            recommendation.priority,
-        ),
-      ).toEqual([1, 2, 3, 4]);
+}
+
+describe("generateRecommendations", () => {
+  const role = getCareerRole("product-engineer");
+  const profile = profileWithSkills([
+    { id: "react", status: "demonstrated" },
+    { id: "product-thinking", status: "developing" },
+  ]);
+
+  it("ranks core gaps ahead of common gaps", () => {
+    const recommendations = generateRecommendations({
+      profile,
+      role,
+      limit: 10,
     });
-  
-    it("does not recommend already demonstrated skills", () => {
-      const recommendations =
-        generateRecommendations(assessment, {
-          limit: 10,
-        });
-  
-      expect(
-        recommendations.some(
-          (recommendation) =>
-            recommendation.skillId ===
-            "typescript",
-        ),
-      ).toBe(false);
-    });
-  
-    it("returns the top three recommendations by default", () => {
-      const recommendations =
-        generateRecommendations(assessment);
-  
-      expect(recommendations).toHaveLength(3);
-  
-      expect(
-        recommendations.map(
-          (recommendation) =>
-            recommendation.skillId,
-        ),
-      ).toEqual([
-        "product-thinking",
-        "react",
-        "design-systems",
-      ]);
-    });
-  
-    it("estimates the score increase from demonstrating each skill", () => {
-      const recommendations =
-        generateRecommendations(assessment, {
-          limit: 10,
-        });
-  
-      const productThinking =
-        recommendations.find(
-          (recommendation) =>
-            recommendation.skillId ===
-            "product-thinking",
-        );
-  
-      const react = recommendations.find(
-        (recommendation) =>
-          recommendation.skillId === "react",
-      );
-  
-      const userExperience =
-        recommendations.find(
-          (recommendation) =>
-            recommendation.skillId ===
-            "user-experience",
-        );
-  
-      expect(
-        productThinking?.estimatedScoreIncrease,
-      ).toBe(25);
-  
-      expect(
-        react?.estimatedScoreIncrease,
-      ).toBe(12);
-  
-      expect(
-        userExperience?.estimatedScoreIncrease,
-      ).toBe(6);
-    });
-  
-    it("assigns action types based on the current evidence status", () => {
-      const recommendations =
-        generateRecommendations(assessment, {
-          limit: 10,
-        });
-  
-      const missingSkill =
-        recommendations.find(
-          (recommendation) =>
-            recommendation.skillId ===
-            "product-thinking",
-        );
-  
-      const developingSkill =
-        recommendations.find(
-          (recommendation) =>
-            recommendation.skillId ===
-            "react",
-        );
-  
-      expect(
-        missingSkill?.actionType,
-      ).toBe("create-evidence");
-  
-      expect(
-        developingSkill?.actionType,
-      ).toBe("strengthen-evidence");
-    });
-  
-    it("returns no recommendations when all requirements are demonstrated", () => {
-      const completeAssessment:
-        ReadinessAssessment = {
-        score: 100,
-        demonstratedCount: 1,
-        developingCount: 0,
-        missingCount: 0,
-        totalRequirements: 1,
-        requirements: [
-          {
-            skillId: "typescript",
-            skillName: "TypeScript",
-            importance: "required",
-            status: "demonstrated",
-            weight: 2,
-            earnedWeight: 2,
-          },
-        ],
-      };
-  
-      expect(
-        generateRecommendations(
-          completeAssessment,
-        ),
-      ).toEqual([]);
-    });
+
+    expect(recommendations.length).toBeGreaterThan(0);
+    expect(recommendations[0].tier).toBe("core");
+    expect(
+      recommendations.map((recommendation) => recommendation.competencyId),
+    ).not.toContain("design-systems");
   });
+
+  it("does not recommend already demonstrated competencies", () => {
+    const completeProfile = profileWithSkills([
+      { id: "product-thinking", status: "demonstrated" },
+      { id: "react", status: "demonstrated" },
+      { id: "user-experience", status: "demonstrated" },
+      { id: "deployment", status: "demonstrated" },
+      { id: "postgresql", status: "demonstrated" },
+      { id: "api-integration", status: "demonstrated" },
+      { id: "software-testing", status: "demonstrated" },
+      { id: "design-systems", status: "demonstrated" },
+    ]);
+
+    expect(
+      generateRecommendations({
+        profile: completeProfile,
+        role,
+      }),
+    ).toEqual([]);
+  });
+
+  it("never chooses an already-satisfied evidence group", () => {
+    const recommendations = generateRecommendations({
+      profile,
+      role,
+      limit: 10,
+    });
+
+    const endToEnd = recommendations.find(
+      (recommendation) =>
+        recommendation.competencyId === "end-to-end-ownership",
+    );
+
+    expect(endToEnd?.suggestedEvidenceSkillIds).toEqual(["deployment"]);
+    expect(endToEnd?.suggestedEvidenceSkillIds).not.toContain("react");
+  });
+
+  it("matches estimated impact to projected readiness", () => {
+    const recommendations = generateRecommendations({
+      profile,
+      role,
+      limit: 10,
+    });
+
+    const baseline = calculateReadiness(profile, role);
+
+    for (const recommendation of recommendations) {
+      const projected = calculateReadiness(
+        applyEvidencePackageToProfile(profile, {
+          idSuffix: recommendation.competencyId,
+          title: recommendation.title,
+          description: recommendation.action,
+          skillIds: recommendation.suggestedEvidenceSkillIds,
+        }),
+        role,
+      );
+
+      expect(recommendation.estimatedScoreIncrease).toBe(
+        Math.max(0, projected.score - baseline.score),
+      );
+    }
+  });
+
+  it("returns the top three recommendations by default", () => {
+    expect(
+      generateRecommendations({
+        profile,
+        role,
+      }),
+    ).toHaveLength(3);
+  });
+});
