@@ -241,7 +241,7 @@ export function ProfileExtractionReview({
   return (
     <section className="rounded-2xl border bg-card p-5 shadow-sm">
       <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-700 dark:bg-violet-950 dark:text-violet-300">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
           <WandSparkles
             className="h-5 w-5"
             aria-hidden="true"
@@ -286,7 +286,7 @@ export function ProfileExtractionReview({
                 "inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors",
 
                 kind === "course"
-                  ? "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300"
+                  ? "border-category-course/50 bg-category-course/10 text-category-course"
                   : "hover:bg-muted",
               )}
             >
@@ -312,7 +312,7 @@ export function ProfileExtractionReview({
 
                 kind ===
                   "experience"
-                  ? "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                  ? "border-category-experience/50 bg-category-experience/10 text-category-experience"
                   : "hover:bg-muted",
               )}
             >
@@ -359,7 +359,7 @@ export function ProfileExtractionReview({
               sourceText.trim().length <
                 MINIMUM_TEXT_LENGTH
             }
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-violet-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-violet-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-violet-600 dark:hover:bg-violet-500"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isAnalyzing ? (
               <>
@@ -383,7 +383,7 @@ export function ProfileExtractionReview({
           {error ? (
             <div
               role="alert"
-              className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300"
+              className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
             >
               {error}
             </div>
@@ -414,7 +414,7 @@ export function ProfileExtractionReview({
             <div className="space-y-4 rounded-xl border bg-background p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-violet-700 dark:text-violet-300">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
                     Review before adding
                   </p>
 
@@ -549,7 +549,7 @@ export function ProfileExtractionReview({
                           "flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors",
 
                           isSelected
-                            ? "border-violet-300 bg-violet-50/50 dark:border-violet-800 dark:bg-violet-950/40"
+                            ? "border-primary/40 bg-primary/8"
                             : "hover:bg-muted/50",
                         )}
                       >
@@ -571,7 +571,7 @@ export function ProfileExtractionReview({
                             "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border",
 
                             isSelected
-                              ? "border-violet-600 bg-violet-600 text-white"
+                              ? "border-primary bg-primary text-primary-foreground"
                               : "border-muted-foreground/40",
                           )}
                         >

@@ -23,6 +23,7 @@ import {
 } from "../types/workspace-view";
 
 import { WorkspaceSidebar } from "./workspace-sidebar";
+import { ThemeToggle } from "./theme-toggle";
 
 type WorkspaceShellProps = {
   activeView: WorkspaceView;
@@ -73,6 +74,7 @@ export function WorkspaceShell({
         <div className="space-y-3 border-t border-sidebar-border px-4 py-4">
           {saveStatusNode}
           <AccountMenu userEmail={userEmail} />
+          <ThemeToggle />
         </div>
       </aside>
 
@@ -114,6 +116,7 @@ export function WorkspaceShell({
               <div className="space-y-3 border-t border-sidebar-border px-4 py-4">
                 {saveStatusNode}
                 <AccountMenu userEmail={userEmail} />
+                <ThemeToggle />
               </div>
             </SheetContent>
           </Sheet>

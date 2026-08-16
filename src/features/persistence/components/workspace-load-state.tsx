@@ -16,7 +16,7 @@ export function WorkspaceLoadingState() {
     >
       <div className="max-w-sm text-center">
         <LoaderCircle
-          className="mx-auto h-9 w-9 animate-spin text-violet-600"
+          className="mx-auto h-9 w-9 animate-spin text-primary"
           aria-hidden="true"
         />
 
@@ -46,12 +46,12 @@ export function WorkspaceLoadError({
 }: WorkspaceLoadErrorProps) {
   return (
     <section
-      className="flex min-h-[420px] items-center justify-center rounded-2xl border border-amber-200 bg-amber-50/50 p-8 shadow-sm dark:border-amber-900 dark:bg-amber-950/20"
+      className="flex min-h-[420px] items-center justify-center rounded-2xl border border-warning/30 bg-warning/10 p-8 shadow-sm"
       role="alert"
     >
       <div className="max-w-md text-center">
         <CloudOff
-          className="mx-auto h-10 w-10 text-amber-700 dark:text-amber-300"
+          className="mx-auto h-10 w-10 text-warning"
           aria-hidden="true"
         />
 

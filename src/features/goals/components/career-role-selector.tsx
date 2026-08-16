@@ -32,7 +32,7 @@ export function CareerRoleSelector({
   return (
     <section className="rounded-2xl border bg-card p-5 shadow-sm">
       <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950 dark:text-rose-300">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-category-role/12 text-category-role">
           <Target className="h-5 w-5" aria-hidden="true" />
         </div>
 
@@ -62,14 +62,14 @@ export function CareerRoleSelector({
               onClick={() => onSelect(role.id)}
               className={cn(
                 "relative rounded-xl border p-4 text-left transition",
-                "hover:border-rose-300 hover:bg-muted/40",
+                "hover:border-category-role/50 hover:bg-muted/40",
                 isSelected
-                  ? "border-rose-400 bg-rose-50/60 ring-1 ring-rose-300 dark:bg-rose-950/20"
+                  ? "border-category-role/60 bg-category-role/8 ring-1 ring-category-role/40"
                   : "bg-background",
               )}
             >
               {isSelected ? (
-                <span className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-white">
+                <span className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-category-role text-white">
                   <Check
                     className="h-3 w-3"
                     aria-hidden="true"
@@ -124,7 +124,7 @@ export function CareerRoleSelector({
               {requiredSkills.map((requirement) => (
                 <span
                   key={requirement.skillId}
-                  className="rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300"
+                  className="rounded-full border border-category-role/30 bg-category-role/10 px-2.5 py-1 text-xs font-medium text-category-role"
                 >
                   {requirement.skillName}
                 </span>

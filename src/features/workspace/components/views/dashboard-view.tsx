@@ -38,14 +38,12 @@ const gapStatusConfig = {
   developing: {
     label: "Developing",
     icon: CircleDashed,
-    className:
-      "text-amber-600 dark:text-amber-400",
+    className: "text-warning",
   },
   missing: {
     label: "Missing",
     icon: CircleAlert,
-    className:
-      "text-rose-600 dark:text-rose-400",
+    className: "text-destructive",
   },
 } as const;
 
@@ -153,19 +151,19 @@ export function DashboardView({
             <ReadinessStat
               label="Demonstrated"
               value={assessment.demonstratedCount}
-              className="text-emerald-600 dark:text-emerald-400"
+              className="text-success"
             />
 
             <ReadinessStat
               label="Developing"
               value={assessment.developingCount}
-              className="text-amber-600 dark:text-amber-400"
+              className="text-warning"
             />
 
             <ReadinessStat
               label="Missing"
               value={assessment.missingCount}
-              className="text-rose-600 dark:text-rose-400"
+              className="text-destructive"
             />
           </dl>
         </div>

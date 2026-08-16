@@ -33,49 +33,44 @@ const categoryConfig = {
   student: {
     label: "Student",
     icon: GraduationCap,
-    borderClassName: "border-violet-400",
-    iconClassName:
-      "bg-violet-50 text-violet-700 dark:bg-violet-950 dark:text-violet-300",
+    borderClassName: "border-category-student/70",
+    iconClassName: "bg-category-student/12 text-category-student",
   },
 
   course: {
     label: "Course",
     icon: BookOpen,
-    borderClassName: "border-blue-400",
-    iconClassName:
-      "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
+    borderClassName: "border-category-course/70",
+    iconClassName: "bg-category-course/12 text-category-course",
   },
 
   experience: {
     label: "Experience",
     icon: BriefcaseBusiness,
-    borderClassName: "border-amber-400",
-    iconClassName:
-      "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+    borderClassName: "border-category-experience/70",
+    iconClassName: "bg-category-experience/12 text-category-experience",
   },
 
   skill: {
     label: "Skill",
     icon: Sparkles,
-    borderClassName: "border-emerald-400",
-    iconClassName:
-      "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+    borderClassName: "border-category-skill/70",
+    iconClassName: "bg-category-skill/12 text-category-skill",
   },
 
   role: {
     label: "Career role",
     icon: Target,
-    borderClassName: "border-rose-400",
-    iconClassName:
-      "bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300",
+    borderClassName: "border-category-role/70",
+    iconClassName: "bg-category-role/12 text-category-role",
   },
 
   recommendation: {
     label: "Next move",
     icon: Lightbulb,
-    borderClassName: "border-cyan-400",
+    borderClassName: "border-category-recommendation/70",
     iconClassName:
-      "bg-cyan-50 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300",
+      "bg-category-recommendation/12 text-category-recommendation",
   },
 } satisfies Record<MovaNodeCategory, CategoryConfig>;
 
@@ -88,32 +83,32 @@ const statusConfig: Record<
 > = {
   complete: {
     label: "Complete",
-    dotClassName: "bg-emerald-500",
+    dotClassName: "bg-success",
   },
 
   "in-progress": {
     label: "In progress",
-    dotClassName: "bg-amber-500",
+    dotClassName: "bg-warning",
   },
 
   planned: {
     label: "Planned",
-    dotClassName: "bg-sky-500",
+    dotClassName: "bg-info",
   },
 
   missing: {
     label: "Missing",
-    dotClassName: "bg-rose-500",
+    dotClassName: "bg-destructive",
   },
 
   recommended: {
     label: "Recommended",
-    dotClassName: "bg-blue-500",
+    dotClassName: "bg-primary",
   },
 
   scenario: {
     label: "Scenario",
-    dotClassName: "bg-violet-500",
+    dotClassName: "bg-highlight",
   },
 };
 

@@ -412,7 +412,7 @@ export function StudentProfileForm({
       <div className="border-t pt-5">
         <div className="mb-3 flex items-center gap-2">
           <BookOpen
-            className="h-4 w-4 text-blue-500"
+            className="h-4 w-4 text-category-course"
             aria-hidden="true"
           />
 
@@ -500,7 +500,7 @@ export function StudentProfileForm({
       <div className="border-t pt-5">
         <div className="mb-3 flex items-center gap-2">
           <BriefcaseBusiness
-            className="h-4 w-4 text-amber-500"
+            className="h-4 w-4 text-category-experience"
             aria-hidden="true"
           />
 

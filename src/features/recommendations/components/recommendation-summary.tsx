@@ -29,21 +29,21 @@ import {
       className: string;
     }
   > = {
-    critical: {
-      label: "Critical",
-      className:
-        "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300",
-    },
-    high: {
-      label: "High priority",
-      className:
-        "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300",
-    },
-    medium: {
-      label: "Medium priority",
-      className:
-        "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300",
-    },
+  critical: {
+    label: "Critical",
+    className:
+      "border-destructive/30 bg-destructive/10 text-destructive",
+  },
+  high: {
+    label: "High priority",
+    className:
+      "border-warning/30 bg-warning/10 text-warning",
+  },
+  medium: {
+    label: "Medium priority",
+    className:
+      "border-info/30 bg-info/10 text-info",
+  },
     low: {
       label: "Lower priority",
       className:
@@ -61,7 +61,7 @@ import {
       return (
         <section className="rounded-2xl border bg-card p-5 shadow-sm">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-success/12 text-success">
               <CheckCircle2
                 className="h-5 w-5"
                 aria-hidden="true"
@@ -99,7 +99,7 @@ import {
     return (
       <section className="rounded-2xl border bg-card p-5 shadow-sm">
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-50 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-category-recommendation/12 text-category-recommendation">
             <Lightbulb
               className="h-5 w-5"
               aria-hidden="true"
@@ -124,15 +124,14 @@ import {
   
         <article
           className={cn(
-            "mt-5 rounded-2xl border border-cyan-200 bg-cyan-50/60 p-5",
-            "dark:border-cyan-900 dark:bg-cyan-950/40",
+            "mt-5 rounded-2xl border border-category-recommendation/30 bg-category-recommendation/8 p-5",
             isBestRecommendationActive &&
-              "ring-2 ring-violet-300 ring-offset-2 dark:ring-violet-800",
+              "ring-2 ring-primary/50 ring-offset-2 ring-offset-background",
           )}
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-800 dark:text-cyan-200">
+              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-category-recommendation">
                 Best next move
               </span>
   
@@ -146,7 +145,7 @@ import {
               </span>
             </div>
   
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-200 bg-background px-3 py-1 text-xs font-semibold text-cyan-800 dark:border-cyan-900 dark:text-cyan-200">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-category-recommendation/30 bg-background px-3 py-1 text-xs font-semibold text-category-recommendation">
               <TrendingUp
                 className="h-3.5 w-3.5"
                 aria-hidden="true"
@@ -163,7 +162,7 @@ import {
             {bestRecommendation.action}
           </p>
   
-          <div className="mt-4 rounded-xl border border-cyan-200/80 bg-background/80 p-3 dark:border-cyan-900">
+          <div className="mt-4 rounded-xl border border-category-recommendation/25 bg-background/80 p-3">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Why this matters
             </p>
@@ -191,10 +190,10 @@ import {
             aria-pressed={isBestRecommendationActive}
             className={cn(
               "mt-4 inline-flex items-center gap-2 rounded-lg px-4 py-2",
-              "text-sm font-semibold text-white transition-colors",
+              "text-sm font-semibold transition-colors",
               isBestRecommendationActive
-                ? "bg-violet-700 hover:bg-violet-800 dark:bg-violet-600 dark:hover:bg-violet-500"
-                : "bg-cyan-700 hover:bg-cyan-800 dark:bg-cyan-600 dark:hover:bg-cyan-500",
+                ? "bg-highlight text-white hover:bg-highlight/90"
+                : "bg-primary text-primary-foreground hover:bg-primary/90",
             )}
           >
             <FlaskConical
@@ -231,7 +230,7 @@ import {
                     className={cn(
                       "rounded-xl border bg-background p-4",
                       isActive &&
-                        "border-violet-300 ring-2 ring-violet-200/60 dark:border-violet-800 dark:ring-violet-900/60",
+                        "border-primary/40 ring-2 ring-primary/25",
                     )}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -271,7 +270,7 @@ import {
                         {priority.label}
                       </span>
   
-                      <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                      <span className="text-xs font-semibold text-success">
                         +
                         {
                           recommendation.estimatedScoreIncrease
@@ -291,7 +290,7 @@ import {
                         "rounded-lg border px-3 py-2 text-sm font-medium",
                         "transition-colors",
                         isActive
-                          ? "border-violet-300 bg-violet-50 text-violet-700 hover:bg-violet-100 dark:border-violet-800 dark:bg-violet-950 dark:text-violet-300 dark:hover:bg-violet-900"
+                          ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/15"
                           : "hover:bg-muted",
                       )}
                     >

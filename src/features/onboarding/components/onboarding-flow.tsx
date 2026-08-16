@@ -264,12 +264,12 @@ const gapStatusConfig = {
   developing: {
     label: "Developing",
     icon: CircleDashed,
-    className: "text-amber-600 dark:text-amber-400",
+    className: "text-warning",
   },
   missing: {
     label: "Missing",
     icon: CircleAlert,
-    className: "text-rose-600 dark:text-rose-400",
+    className: "text-destructive",
   },
 } as const;
 
