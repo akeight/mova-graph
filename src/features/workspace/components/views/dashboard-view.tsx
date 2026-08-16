@@ -34,20 +34,6 @@ type DashboardViewProps = {
   onNavigate: (view: WorkspaceView) => void;
 };
 
-function getGreeting(): string {
-  const hour = new Date().getHours();
-
-  if (hour < 12) {
-    return "Good morning";
-  }
-
-  if (hour < 18) {
-    return "Good afternoon";
-  }
-
-  return "Good evening";
-}
-
 const gapStatusConfig = {
   developing: {
     label: "Developing",
@@ -82,7 +68,7 @@ export function DashboardView({
       <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-2">
           <p className="text-sm font-medium text-muted-foreground">
-            {getGreeting()}, {firstName}
+            Welcome back, {firstName}
           </p>
 
           <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
@@ -321,17 +307,7 @@ export function DashboardView({
         </section>
       </div>
 
-      <section className="flex flex-col gap-3 sm:flex-row">
-        <DashboardAction
-          label="View Skill Gaps"
-          onClick={() => onNavigate("skill-gaps")}
-        />
-
-        <DashboardAction
-          label="View Next Steps"
-          onClick={() => onNavigate("next-steps")}
-        />
-
+      <section>
         <DashboardAction
           label="Explore Career Map"
           onClick={() => onNavigate("career-map")}
@@ -385,7 +361,7 @@ function DashboardAction({
     <button
       type="button"
       onClick={onClick}
-      className="group flex flex-1 items-center justify-between gap-3 rounded-2xl border bg-card px-5 py-4 text-left text-sm font-semibold text-foreground shadow-sm transition-colors hover:border-primary/30 hover:bg-primary/5"
+      className="group flex w-full items-center justify-between gap-3 rounded-2xl border bg-card px-5 py-4 text-left text-sm font-semibold text-foreground shadow-sm transition-colors hover:border-primary/30 hover:bg-primary/5 sm:w-80"
     >
       {label}
 

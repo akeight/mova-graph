@@ -28,7 +28,7 @@ export function NextStepsView({
         <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
           The moves that create the most progress toward{" "}
           {roleTitle}. Preview any move to see its impact in
-          What If?.
+          What If?
         </p>
       </header>
 
