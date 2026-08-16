@@ -52,6 +52,8 @@ import type { ApprovedProfileItem } from
 
 import type { StudentProfile } from
   "@/features/student-profile/types/student-profile";
+import { createEmptyProfile } from
+  "@/features/student-profile/utils/create-empty-profile";
 import { reconcileProfileSkills } from
   "@/features/student-profile/utils/reconcile-profile-skills";
 
@@ -83,6 +85,55 @@ function createDemoProfile(): StudentProfile {
   );
 }
 
+function deriveNameFromEmail(
+  userEmail: string | null,
+): string {
+  const localPart = userEmail
+    ?.split("@")[0]
+    ?.trim();
+
+  return localPart && localPart.length > 0
+    ? localPart
+    : "New student";
+}
+
+function isDevAccount(
+  userEmail: string | null,
+): boolean {
+  if (process.env.NODE_ENV !== "development") {
+    return false;
+  }
+
+  const devEmail =
+    process.env.NEXT_PUBLIC_DEV_ACCOUNT_EMAIL
+      ?.trim()
+      .toLowerCase();
+
+  if (!devEmail) {
+    return false;
+  }
+
+  return (
+    userEmail?.trim().toLowerCase() === devEmail
+  );
+}
+
+/**
+ * Genuinely new users start from a clean, empty profile. In development, a
+ * designated dev account seeds the demo profile instead for convenience.
+ */
+function createInitialProfile(
+  userEmail: string | null,
+): StudentProfile {
+  if (isDevAccount(userEmail)) {
+    return createDemoProfile();
+  }
+
+  return createEmptyProfile({
+    name: deriveNameFromEmail(userEmail),
+  });
+}
+
 type MovaWorkspaceProps = {
   userEmail: string | null;
 };
@@ -92,7 +143,7 @@ export function MovaWorkspace({
 }: MovaWorkspaceProps) {
   const [profile, setProfile] =
     useState<StudentProfile>(
-      createDemoProfile,
+      () => createInitialProfile(userEmail),
     );
 
   const [

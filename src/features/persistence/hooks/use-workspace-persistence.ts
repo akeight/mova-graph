@@ -16,8 +16,10 @@ import {
   getStoredAnonymousWorkspaceId,
   loadUserWorkspace,
   persistUserWorkspace,
-  WorkspaceNotFoundError,
 } from "../services/workspace-client";
+
+import { resolveWorkspaceHydration } from
+  "../services/resolve-workspace-hydration";
 
 import type {
   PersistedWorkspace,
@@ -81,80 +83,51 @@ export function useWorkspacePersistence({
       setStatus("loading");
       setError(null);
 
+      let result;
+
       try {
-        const workspace = await loadUserWorkspace(
-          controller.signal,
+        result = await resolveWorkspaceHydration({
+          loadUserWorkspace,
+          claimWorkspace,
+          getStoredAnonymousWorkspaceId,
+          signal: controller.signal,
+        });
+      } catch {
+        // Only aborts are rethrown; a cancelled hydration is ignored.
+        return;
+      }
+
+      if (controller.signal.aborted) {
+        return;
+      }
+
+      if (result.kind === "hydrated") {
+        onHydrate(result.workspace);
+
+        setLastSavedAt(
+          new Date(result.workspace.updatedAt),
         );
-
-        onHydrate(workspace);
-
-        setLastSavedAt(new Date(workspace.updatedAt));
         setHydrationStatus("ready");
         setStatus("saved");
 
         return;
-      } catch (caughtError) {
-        if (controller.signal.aborted) {
-          return;
-        }
-
-        if (!(caughtError instanceof WorkspaceNotFoundError)) {
-          /*
-           * Do not mark hydration ready after a network/server error.
-           * Autosave stays disabled until the user retries successfully or
-           * enters local demo mode, so we never overwrite remote data.
-           */
-          setHydrationStatus("error");
-          setStatus("error");
-
-          setError(
-            caughtError instanceof Error
-              ? caughtError.message
-              : "Mova could not load your saved workspace.",
-          );
-
-          return;
-        }
       }
 
-      /*
-       * No workspace yet for this user. Before enabling autosave, attempt to
-       * claim any pre-existing anonymous browser workspace so existing profile
-       * data is preserved and never overwritten by the default demo profile.
-       */
-      try {
-        const anonymousWorkspaceId =
-          getStoredAnonymousWorkspaceId();
-
-        const claim = await claimWorkspace(
-          anonymousWorkspaceId,
-          controller.signal,
-        );
-
-        if (claim.workspace) {
-          onHydrate(claim.workspace);
-
-          setLastSavedAt(new Date(claim.workspace.updatedAt));
-        } else {
-          setLastSavedAt(null);
-        }
-
-        setHydrationStatus("ready");
-        setStatus("saved");
-      } catch {
-        if (controller.signal.aborted) {
-          return;
-        }
-
-        /*
-         * A rejected or failed claim must not brick the app. Fall back to a
-         * fresh workspace for this user; autosave is safe because the server
-         * scopes writes to the verified user id.
-         */
+      if (result.kind === "fresh") {
         setLastSavedAt(null);
         setHydrationStatus("ready");
         setStatus("saved");
+
+        return;
       }
+
+      /*
+       * Uncertain remote state (network/5xx/unexpected). Keep autosave disabled
+       * so default/local data never overwrites recoverable persisted data.
+       */
+      setHydrationStatus("error");
+      setStatus("error");
+      setError(result.message);
     };
 
     void hydrateWorkspace();
