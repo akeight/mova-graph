@@ -13,6 +13,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
+import { AccountMenu } from "@/features/auth/components/account-menu";
 import { WorkspaceSaveStatus } from "@/features/persistence/components/workspace-save-status";
 import type { WorkspaceSaveStatus as WorkspaceSaveStatusValue } from "@/features/persistence/types/workspace";
 
@@ -29,6 +30,7 @@ type WorkspaceShellProps = {
   saveStatus: WorkspaceSaveStatusValue;
   lastSavedAt: Date | null;
   saveError: string | null;
+  userEmail: string | null;
   children: ReactNode;
 };
 
@@ -38,6 +40,7 @@ export function WorkspaceShell({
   saveStatus,
   lastSavedAt,
   saveError,
+  userEmail,
   children,
 }: WorkspaceShellProps) {
   const [isMobileNavOpen, setIsMobileNavOpen] =
@@ -67,8 +70,9 @@ export function WorkspaceShell({
           className="flex-1"
         />
 
-        <div className="border-t border-sidebar-border px-4 py-4">
+        <div className="space-y-3 border-t border-sidebar-border px-4 py-4">
           {saveStatusNode}
+          <AccountMenu userEmail={userEmail} />
         </div>
       </aside>
 
@@ -107,8 +111,9 @@ export function WorkspaceShell({
                 onNavigate={handleNavigate}
               />
 
-              <div className="border-t border-sidebar-border px-4 py-4">
+              <div className="space-y-3 border-t border-sidebar-border px-4 py-4">
                 {saveStatusNode}
+                <AccountMenu userEmail={userEmail} />
               </div>
             </SheetContent>
           </Sheet>

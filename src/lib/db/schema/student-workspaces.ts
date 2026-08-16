@@ -1,9 +1,12 @@
+import { sql } from "drizzle-orm";
 import {
+    boolean,
     integer,
     jsonb,
     pgTable,
     text,
     timestamp,
+    uniqueIndex,
     uuid,
   } from "drizzle-orm/pg-core";
   
@@ -13,6 +16,12 @@ import {
   export const studentWorkspaces =
     pgTable("student_workspaces", {
       id: uuid("id").primaryKey(),
+  
+      /*
+       * Owner of this workspace, set to the verified Supabase user id.
+       * Nullable so pre-auth anonymous workspaces remain claimable.
+       */
+      userId: uuid("user_id"),
   
       version: integer("version")
         .notNull()
@@ -25,6 +34,14 @@ import {
       profile: jsonb("profile")
         .$type<StudentProfile>()
         .notNull(),
+  
+      onboardingCompleted:
+        boolean("onboarding_completed")
+          .notNull()
+          .default(false),
+  
+      onboardingStep:
+        text("onboarding_step"),
   
       createdAt: timestamp(
         "created_at",
@@ -43,7 +60,15 @@ import {
       )
         .defaultNow()
         .notNull(),
-    });
+    }, (table) => [
+      /*
+       * At most one workspace per authenticated user. The partial predicate
+       * lets legacy anonymous rows (user_id IS NULL) coexist.
+       */
+      uniqueIndex("student_workspaces_user_id_unique")
+        .on(table.userId)
+        .where(sql`${table.userId} is not null`),
+    ]);
   
   export type StudentWorkspaceRow =
     typeof studentWorkspaces.$inferSelect;

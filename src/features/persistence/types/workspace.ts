@@ -1,10 +1,13 @@
 import type { StudentProfile } from
   "@/features/student-profile/types/student-profile";
+import type { OnboardingState } from
+  "@/features/onboarding/types/onboarding";
 
 export type WorkspaceSnapshot = {
-  version: 1;
+  version: 2;
   profile: StudentProfile;
   selectedRoleId: string;
+  onboarding: OnboardingState;
 };
 
 export type PersistedWorkspace =
