@@ -363,7 +363,7 @@ export function StudentProfileForm({
             aria-hidden="true"
           />
 
-          Demo
+          Load example
         </button>
       </div>
 
