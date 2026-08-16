@@ -6,8 +6,6 @@ import {
   useState,
 } from "react";
 
-import { CareerRoleSelector } from
-  "@/features/goals/components/career-role-selector";
 import {
   careerRoles,
   defaultCareerRoleId,
@@ -19,49 +17,53 @@ import {
   WorkspaceLoadingState,
 } from "@/features/persistence/components/workspace-load-state";
 
-import { WorkspaceSaveStatus } from
-  "@/features/persistence/components/workspace-save-status";
 import { useWorkspacePersistence } from
   "@/features/persistence/hooks/use-workspace-persistence";
 import type { PersistedWorkspace } from
   "@/features/persistence/types/workspace";
 
-import { ReadinessSummary } from
-  "@/features/readiness/components/readiness-summary";
 import { calculateReadiness } from
   "@/features/readiness/services/calculate-readiness";
 
-import { RecommendationSummary } from
-  "@/features/recommendations/components/recommendation-summary";
 import { generateRecommendations } from
   "@/features/recommendations/services/generate-recommendations";
 import type { NextMoveRecommendation } from
   "@/features/recommendations/types/recommendation";
 
-import { ScenarioPreview } from
-  "@/features/scenario-simulator/components/scenario-preview";
 import { simulateRecommendation } from
   "@/features/scenario-simulator/services/simulate-recommendation";
 
-import { ProfileExtractionReview } from
-  "@/features/skill-analysis/components/profile-extraction-review";
 import { applyApprovedProfileItem } from
   "@/features/skill-analysis/services/apply-profile-item-extraction";
 import type { ApprovedProfileItem } from
   "@/features/skill-analysis/types/profile-item-extraction";
 
-import { StudentProfileForm } from
-  "@/features/student-profile/components/student-profile-form";
 import type { StudentProfile } from
   "@/features/student-profile/types/student-profile";
 import { reconcileProfileSkills } from
   "@/features/student-profile/utils/reconcile-profile-skills";
 
+import { WorkspaceShell } from
+  "@/features/workspace/components/workspace-shell";
+import { CareerMapView } from
+  "@/features/workspace/components/views/career-map-view";
+import { DashboardView } from
+  "@/features/workspace/components/views/dashboard-view";
+import { NextStepsView } from
+  "@/features/workspace/components/views/next-steps-view";
+import { ProfileView } from
+  "@/features/workspace/components/views/profile-view";
+import { SkillGapsView } from
+  "@/features/workspace/components/views/skill-gaps-view";
+import { WhatIfView } from
+  "@/features/workspace/components/views/what-if-view";
+import {
+  DEFAULT_WORKSPACE_VIEW,
+  type WorkspaceView,
+} from "@/features/workspace/types/workspace-view";
+
 import { sampleStudentProfile } from
   "../data/sample-student";
-
-import { MovaGraph } from
-  "./mova-graph";
 
 function createDemoProfile(): StudentProfile {
   return structuredClone(
@@ -84,6 +86,11 @@ export function MovaWorkspace() {
     activeRecommendationId,
     setActiveRecommendationId,
   ] = useState<string | null>(null);
+
+  const [activeView, setActiveView] =
+    useState<WorkspaceView>(
+      DEFAULT_WORKSPACE_VIEW,
+    );
 
   const handleWorkspaceHydrate =
     useCallback(
@@ -227,11 +234,19 @@ export function MovaWorkspace() {
     setActiveRecommendationId(
       (
         currentRecommendationId,
-      ) =>
-        currentRecommendationId ===
-        recommendation.id
+      ) => {
+        const isTogglingOff =
+          currentRecommendationId ===
+          recommendation.id;
+
+        if (!isTogglingOff) {
+          setActiveView("what-if");
+        }
+
+        return isTogglingOff
           ? null
-          : recommendation.id,
+          : recommendation.id;
+      },
     );
   };
 
@@ -267,7 +282,13 @@ export function MovaWorkspace() {
     persistence.hydrationStatus ===
     "loading"
   ) {
-    return <WorkspaceLoadingState />;
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-muted/30 p-4">
+        <div className="w-full max-w-md">
+          <WorkspaceLoadingState />
+        </div>
+      </div>
+    );
   }
   
   if (
@@ -275,113 +296,114 @@ export function MovaWorkspace() {
     "error"
   ) {
     return (
-      <WorkspaceLoadError
-        error={persistence.error}
-        onRetry={
-          persistence.retryHydration
-        }
-        onContinueLocally={
-          persistence.continueWithoutPersistence
-        }
-      />
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <CareerRoleSelector
-        roles={careerRoles}
-        selectedRoleId={
-          selectedRoleId
-        }
-        onSelect={
-          handleRoleSelect
-        }
-      />
-
-      <div className="flex justify-end">
-        <WorkspaceSaveStatus
-          status={
-            persistence.status
-          }
-          lastSavedAt={
-            persistence.lastSavedAt
-          }
-          error={
-            persistence.error
-          }
-        />
-      </div>
-
-      <ProfileExtractionReview
-        onAdd={
-          handleAddExtractedItem
-        }
-      />
-
-      <div className="grid items-start gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-        <StudentProfileForm
-          profile={profile}
-          onChange={
-            handleProfileChange
-          }
-          onRestoreDemo={
-            restoreDemo
-          }
-        />
-
-        <div className="min-w-0 space-y-6">
-          <ReadinessSummary
-            role={selectedRole}
-            assessment={
-              readinessAssessment
+      <div className="flex min-h-dvh items-center justify-center bg-muted/30 p-4">
+        <div className="w-full max-w-md">
+          <WorkspaceLoadError
+            error={persistence.error}
+            onRetry={
+              persistence.retryHydration
             }
-          />
-
-          <RecommendationSummary
-            roleTitle={
-              selectedRole.title
-            }
-            recommendations={
-              recommendations
-            }
-            activeRecommendationId={
-              activeRecommendationId
-            }
-            onSimulate={
-              handleSimulate
-            }
-          />
-
-          <ScenarioPreview
-            roleTitle={
-              selectedRole.title
-            }
-            scenario={
-              activeScenario
-            }
-            onClear={() =>
-              setActiveRecommendationId(
-                null,
-              )
-            }
-          />
-
-          <MovaGraph
-            profile={
-              graphProfile
-            }
-            role={selectedRole}
-            recommendations={
-              graphRecommendations
-            }
-            isScenarioPreview={
-              activeScenario !==
-              null
+            onContinueLocally={
+              persistence.continueWithoutPersistence
             }
           />
         </div>
       </div>
-    </div>
+    );
+  }
+
+  return (
+    <WorkspaceShell
+      activeView={activeView}
+      onNavigate={setActiveView}
+      saveStatus={persistence.status}
+      lastSavedAt={
+        persistence.lastSavedAt
+      }
+      saveError={persistence.error}
+    >
+      {activeView === "dashboard" ? (
+        <DashboardView
+          profile={profile}
+          role={selectedRole}
+          roles={careerRoles}
+          onRoleSelect={
+            handleRoleSelect
+          }
+          assessment={
+            readinessAssessment
+          }
+          recommendations={
+            recommendations
+          }
+          onNavigate={setActiveView}
+        />
+      ) : null}
+
+      {activeView === "career-map" ? (
+        <CareerMapView
+          profile={graphProfile}
+          role={selectedRole}
+          recommendations={
+            graphRecommendations
+          }
+          isScenarioPreview={
+            activeScenario !== null
+          }
+        />
+      ) : null}
+
+      {activeView === "skill-gaps" ? (
+        <SkillGapsView
+          role={selectedRole}
+          assessment={
+            readinessAssessment
+          }
+        />
+      ) : null}
+
+      {activeView === "next-steps" ? (
+        <NextStepsView
+          roleTitle={
+            selectedRole.title
+          }
+          recommendations={
+            recommendations
+          }
+          activeRecommendationId={
+            activeRecommendationId
+          }
+          onSimulate={handleSimulate}
+        />
+      ) : null}
+
+      {activeView === "what-if" ? (
+        <WhatIfView
+          roleTitle={
+            selectedRole.title
+          }
+          scenario={activeScenario}
+          onClear={() =>
+            setActiveRecommendationId(
+              null,
+            )
+          }
+          onNavigate={setActiveView}
+        />
+      ) : null}
+
+      {activeView === "profile" ? (
+        <ProfileView
+          profile={profile}
+          onProfileChange={
+            handleProfileChange
+          }
+          onRestoreDemo={restoreDemo}
+          onAddExtractedItem={
+            handleAddExtractedItem
+          }
+        />
+      ) : null}
+    </WorkspaceShell>
   );
 }
