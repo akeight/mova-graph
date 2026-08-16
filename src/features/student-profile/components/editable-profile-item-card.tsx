@@ -142,9 +142,9 @@ export function EditableProfileItemCard({
 
   if (isEditing) {
     return (
-      <article className="space-y-3 rounded-xl border border-violet-300 bg-violet-50/40 p-3 dark:border-violet-800 dark:bg-violet-950/30">
+      <article className="space-y-3 rounded-xl border border-primary/40 bg-primary/8 p-3">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-violet-700 dark:text-violet-300">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
             Editing {kind}
           </p>
 
@@ -347,7 +347,7 @@ export function EditableProfileItemCard({
             type="button"
             onClick={handleDelete}
             aria-label={`Delete ${item.title}`}
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950 dark:hover:text-rose-300"
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
           >
             <Trash2
               className="h-4 w-4"

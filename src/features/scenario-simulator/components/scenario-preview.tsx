@@ -30,17 +30,17 @@ import {
     demonstrated: {
       label: "Demonstrated",
       className:
-        "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300",
+        "border-success/30 bg-success/12 text-success",
     },
     developing: {
       label: "Developing",
       className:
-        "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300",
+        "border-warning/30 bg-warning/12 text-warning",
     },
     missing: {
       label: "Missing",
       className:
-        "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300",
+        "border-destructive/30 bg-destructive/12 text-destructive",
     },
   };
   
@@ -53,7 +53,7 @@ import {
       return (
         <section className="rounded-2xl border border-dashed bg-card p-5">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-700 dark:bg-violet-950 dark:text-violet-300">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
               <Eye
                 className="h-5 w-5"
                 aria-hidden="true"
@@ -88,12 +88,12 @@ import {
   
     return (
       <section
-        className="rounded-2xl border border-violet-300 bg-violet-50/50 p-5 shadow-sm dark:border-violet-900 dark:bg-violet-950/30"
+        className="rounded-2xl border border-highlight/30 bg-highlight/8 p-5 shadow-sm"
         aria-live="polite"
       >
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-200">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-highlight/15 text-highlight">
               <TrendingUp
                 className="h-5 w-5"
                 aria-hidden="true"
@@ -101,7 +101,7 @@ import {
             </div>
   
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-700 dark:text-violet-300">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-highlight">
                 Hypothetical preview
               </p>
   
@@ -146,12 +146,12 @@ import {
             emphasized
           />
   
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center dark:border-emerald-900 dark:bg-emerald-950">
-            <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
+          <div className="rounded-xl border border-success/30 bg-success/12 px-4 py-3 text-center">
+            <p className="text-2xl font-bold text-success">
               +{scenario.scoreIncrease}
             </p>
-  
-            <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-300">
+
+            <p className="mt-1 text-xs text-success">
               readiness points
             </p>
           </div>
@@ -192,9 +192,9 @@ import {
           </div>
         </div>
   
-        <div className="mt-4 flex items-start gap-2 rounded-xl border border-violet-200 bg-background/80 p-3 text-sm text-muted-foreground dark:border-violet-900">
+        <div className="mt-4 flex items-start gap-2 rounded-xl border border-highlight/25 bg-background/80 p-3 text-sm text-muted-foreground">
           <ShieldCheck
-            className="mt-0.5 h-4 w-4 shrink-0 text-violet-600 dark:text-violet-300"
+            className="mt-0.5 h-4 w-4 shrink-0 text-highlight"
             aria-hidden="true"
           />
   
@@ -221,10 +221,10 @@ import {
     return (
       <div
         className={cn(
-          "rounded-xl border bg-background p-4 text-center",
-          emphasized &&
-            "border-violet-300 ring-2 ring-violet-200/50 dark:border-violet-800 dark:ring-violet-900/50",
-        )}
+        "rounded-xl border bg-background p-4 text-center",
+        emphasized &&
+          "border-primary/40 ring-2 ring-primary/25",
+      )}
       >
         <p className="text-3xl font-bold tracking-tight">
           {score}%

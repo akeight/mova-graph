@@ -44,21 +44,21 @@ const statusConfig: Record<
     label: "Demonstrated",
 
     className:
-      "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300",
+      "border-success/30 bg-success/12 text-success",
   },
 
   developing: {
     label: "Developing",
 
     className:
-      "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300",
+      "border-warning/30 bg-warning/12 text-warning",
   },
 
   planned: {
     label: "Planned",
 
     className:
-      "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900 dark:bg-sky-950 dark:text-sky-300",
+      "border-info/30 bg-info/12 text-info",
   },
 
   inactive: {
@@ -184,10 +184,10 @@ export function SkillManagementPanel({
           return (
             <article
               key={skill.id}
-              className="space-y-3 rounded-xl border border-violet-300 bg-violet-50/40 p-3 dark:border-violet-800 dark:bg-violet-950/30"
+              className="space-y-3 rounded-xl border border-primary/40 bg-primary/8 p-3"
             >
               <div className="flex items-center justify-between gap-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-violet-700 dark:text-violet-300">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
                   Edit skill
                 </p>
 
@@ -386,7 +386,7 @@ export function SkillManagementPanel({
                     )
                   }
                   aria-label={`Remove ${skill.name}`}
-                  className="rounded-md p-1.5 text-muted-foreground hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950 dark:hover:text-rose-300"
+                  className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                 >
                   <Trash2
                     className="h-4 w-4"

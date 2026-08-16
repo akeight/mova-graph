@@ -32,19 +32,19 @@ import {
       label: "Demonstrated",
       icon: CircleCheck,
       className:
-        "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300",
+        "border-success/30 bg-success/12 text-success",
     },
     developing: {
       label: "Developing",
       icon: CircleDashed,
       className:
-        "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300",
+        "border-warning/30 bg-warning/12 text-warning",
     },
     missing: {
       label: "Missing",
       icon: CircleAlert,
       className:
-        "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-300",
+        "border-destructive/30 bg-destructive/12 text-destructive",
     },
   };
   
@@ -56,7 +56,7 @@ import {
       <section className="rounded-2xl border bg-card p-5 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-5">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950 dark:text-rose-300">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-category-role/12 text-category-role">
               <Target
                 className="h-5 w-5"
                 aria-hidden="true"
@@ -112,19 +112,19 @@ import {
           <Metric
             label="Demonstrated"
             value={assessment.demonstratedCount}
-            className="text-emerald-600 dark:text-emerald-400"
+            className="text-success"
           />
-  
+
           <Metric
             label="Developing"
             value={assessment.developingCount}
-            className="text-amber-600 dark:text-amber-400"
+            className="text-warning"
           />
-  
+
           <Metric
             label="Missing"
             value={assessment.missingCount}
-            className="text-rose-600 dark:text-rose-400"
+            className="text-destructive"
           />
         </div>
   
