@@ -147,4 +147,72 @@ describe("evaluateCompetencyEvidence", () => {
 
     expect(suggested).toEqual(["deployment"]);
   });
+
+  it("does not treat api-integration as backend/API development", () => {
+    expect(
+      evaluateCompetencyEvidence(
+        getCompetencyDefinition("backend-api-development"),
+        [skill("api-integration", "demonstrated")],
+      ).evidenceStatus,
+    ).toBe("missing");
+  });
+
+  it("does not treat api-design as backend/API development", () => {
+    expect(
+      evaluateCompetencyEvidence(
+        getCompetencyDefinition("backend-api-development"),
+        [skill("api-design", "demonstrated")],
+      ).evidenceStatus,
+    ).toBe("missing");
+  });
+
+  it("does not treat api-design as frontend API consumption", () => {
+    expect(
+      evaluateCompetencyEvidence(
+        getCompetencyDefinition("api-consumption"),
+        [skill("api-design", "demonstrated")],
+      ).evidenceStatus,
+    ).toBe("missing");
+  });
+
+  it("does not treat api-development as mobile networking", () => {
+    expect(
+      evaluateCompetencyEvidence(
+        getCompetencyDefinition("mobile-api-networking"),
+        [skill("api-development", "demonstrated")],
+      ).evidenceStatus,
+    ).toBe("missing");
+  });
+
+  it("treats api-integration as frontend consumption and mobile networking", () => {
+    expect(
+      evaluateCompetencyEvidence(
+        getCompetencyDefinition("api-consumption"),
+        [skill("api-integration", "demonstrated")],
+      ).evidenceStatus,
+    ).toBe("demonstrated");
+
+    expect(
+      evaluateCompetencyEvidence(
+        getCompetencyDefinition("mobile-api-networking"),
+        [skill("api-integration", "demonstrated")],
+      ).evidenceStatus,
+    ).toBe("demonstrated");
+  });
+
+  it("treats backend-development or api-development as backend/API development", () => {
+    expect(
+      evaluateCompetencyEvidence(
+        getCompetencyDefinition("backend-api-development"),
+        [skill("backend-development", "demonstrated")],
+      ).evidenceStatus,
+    ).toBe("demonstrated");
+
+    expect(
+      evaluateCompetencyEvidence(
+        getCompetencyDefinition("backend-api-development"),
+        [skill("api-development", "demonstrated")],
+      ).evidenceStatus,
+    ).toBe("demonstrated");
+  });
 });

@@ -248,11 +248,7 @@ export const careerCompetencies = [
       groups: [
         {
           id: "api",
-          skillIds: [
-            "api-design",
-            "api-integration",
-            "api-development",
-          ],
+          skillIds: ["api-integration"],
         },
       ],
     },
@@ -266,12 +262,7 @@ export const careerCompetencies = [
       groups: [
         {
           id: "backend",
-          skillIds: [
-            "backend-development",
-            "api-design",
-            "api-integration",
-            "api-development",
-          ],
+          skillIds: ["backend-development", "api-development"],
         },
       ],
     },
@@ -319,7 +310,7 @@ export const careerCompetencies = [
       groups: [
         {
           id: "networking",
-          skillIds: ["api-integration", "api-development"],
+          skillIds: ["api-integration"],
         },
       ],
     },
@@ -339,8 +330,8 @@ export const careerCompetencies = [
     },
   }),
   competency({
-    id: "ios-swift",
-    name: "iOS / Swift Expertise",
+    id: "ios-development-specialization",
+    name: "iOS Development",
     description:
       "Build for Apple platforms with iOS or Swift expertise.",
     evidence: {
@@ -353,8 +344,8 @@ export const careerCompetencies = [
     },
   }),
   competency({
-    id: "android-kotlin",
-    name: "Android / Kotlin Expertise",
+    id: "android-development-specialization",
+    name: "Android Development",
     description:
       "Build for Android with Kotlin or Android-platform expertise.",
     evidence: {

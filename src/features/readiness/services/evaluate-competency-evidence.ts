@@ -2,40 +2,14 @@ import type { CareerCompetencyDefinition } from "@/features/goals/types/career-r
 import { getEvidenceSkillName } from "@/features/goals/data/evidence-skills";
 import type { StudentSkill } from "@/features/student-profile/types/student-profile";
 
-export type EvidenceMatchStatus = "demonstrated" | "developing";
+import type {
+  CompetencyEvidenceEvaluation,
+  EvidenceMatch,
+  EvidenceStatus,
+  GroupEvaluation,
+} from "../types/readiness";
 
-export type EvidenceMatch = {
-  skillId: string;
-  skillName: string;
-  status: EvidenceMatchStatus;
-};
-
-export type GroupEvidenceStatus =
-  | "demonstrated"
-  | "developing"
-  | "missing";
-
-export type GroupEvaluation = {
-  groupId: string;
-  status: GroupEvidenceStatus;
-  credit: 1 | 0.5 | 0;
-  matchedEvidence: EvidenceMatch[];
-};
-
-export type CompetencyEvidenceStatus =
-  | "demonstrated"
-  | "developing"
-  | "missing";
-
-export type CompetencyEvidenceEvaluation = {
-  evidenceStatus: CompetencyEvidenceStatus;
-  groups: GroupEvaluation[];
-  matchedEvidence: EvidenceMatch[];
-  groupProgress: number;
-  competencyCredit: number;
-};
-
-const GROUP_CREDIT: Record<GroupEvidenceStatus, 1 | 0.5 | 0> = {
+const GROUP_CREDIT: Record<EvidenceStatus, 1 | 0.5 | 0> = {
   demonstrated: 1,
   developing: 0.5,
   missing: 0,
@@ -100,7 +74,7 @@ export function evaluateCompetencyEvidence(
         (match) => match.status === "developing",
       );
 
-      const status: GroupEvidenceStatus = hasDemonstrated
+      const status: EvidenceStatus = hasDemonstrated
         ? "demonstrated"
         : hasDeveloping
           ? "developing"
@@ -130,7 +104,7 @@ export function evaluateCompetencyEvidence(
     (group) => group.status !== "missing",
   );
 
-  const evidenceStatus: CompetencyEvidenceStatus =
+  const evidenceStatus: EvidenceStatus =
     demonstratedGroupCount >= minimumGroups
       ? "demonstrated"
       : hasPartialEvidence

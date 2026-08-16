@@ -17,7 +17,7 @@ export const careerRoles = [
       { competencyId: "software-quality", tier: "common" },
       { competencyId: "ux-design-fluency", tier: "common" },
       { competencyId: "design-systems", tier: "specialized" },
-      { competencyId: "production-delivery", tier: "specialized" },
+      { competencyId: "application-performance", tier: "specialized" },
     ],
   },
   {
@@ -59,12 +59,12 @@ export const careerRoles = [
       { competencyId: "mobile-ux", tier: "common" },
       { competencyId: "application-performance", tier: "common" },
       {
-        competencyId: "ios-swift",
+        competencyId: "ios-development-specialization",
         tier: "specialized",
         specializationGroup: "mobile-platform",
       },
       {
-        competencyId: "android-kotlin",
+        competencyId: "android-development-specialization",
         tier: "specialized",
         specializationGroup: "mobile-platform",
       },

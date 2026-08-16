@@ -113,4 +113,17 @@ describe("career model invariants", () => {
       }
     }
   });
+
+  it("gives every supported career at least one core and one common competency", () => {
+    for (const role of careerRoles) {
+      expect(
+        role.competencies.some((assignment) => assignment.tier === "core"),
+      ).toBe(true);
+      expect(
+        role.competencies.some(
+          (assignment) => assignment.tier === "common",
+        ),
+      ).toBe(true);
+    }
+  });
 });

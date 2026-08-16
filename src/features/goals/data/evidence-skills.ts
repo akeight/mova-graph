@@ -69,13 +69,13 @@ export const evidenceSkills = [
     id: "ios-development",
     name: "iOS Development",
     category: "capability",
-    aliases: ["ios development"],
+    aliases: ["ios", "ios development"],
   },
   {
     id: "android-development",
     name: "Android Development",
     category: "capability",
-    aliases: ["android development"],
+    aliases: ["android", "android development"],
   },
   {
     id: "api-development",

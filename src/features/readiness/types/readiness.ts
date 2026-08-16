@@ -1,5 +1,4 @@
 import type { CareerCompetencyTier } from "@/features/goals/types/career-role";
-import type { GroupEvaluation, EvidenceMatch } from "../services/evaluate-competency-evidence";
 
 export type EvidenceStatus =
   | "demonstrated"
@@ -11,6 +10,29 @@ export type DisplayStatus =
   | "developing"
   | "missing"
   | "not-explored";
+
+export type EvidenceMatchStatus = "demonstrated" | "developing";
+
+export type EvidenceMatch = {
+  skillId: string;
+  skillName: string;
+  status: EvidenceMatchStatus;
+};
+
+export type GroupEvaluation = {
+  groupId: string;
+  status: EvidenceStatus;
+  credit: 1 | 0.5 | 0;
+  matchedEvidence: EvidenceMatch[];
+};
+
+export type CompetencyEvidenceEvaluation = {
+  evidenceStatus: EvidenceStatus;
+  groups: GroupEvaluation[];
+  matchedEvidence: EvidenceMatch[];
+  groupProgress: number;
+  competencyCredit: number;
+};
 
 export type CompetencyReadiness = {
   competencyId: string;

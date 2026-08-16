@@ -63,10 +63,12 @@ describe("calculateReadiness", () => {
 
     const assessment = calculateReadiness(profile, role);
     const ios = assessment.competencies.find(
-      (competency) => competency.competencyId === "ios-swift",
+      (competency) =>
+        competency.competencyId === "ios-development-specialization",
     );
     const android = assessment.competencies.find(
-      (competency) => competency.competencyId === "android-kotlin",
+      (competency) =>
+        competency.competencyId === "android-development-specialization",
     );
 
     expect(ios?.evidenceStatus).toBe("demonstrated");
@@ -74,6 +76,13 @@ describe("calculateReadiness", () => {
     expect(android?.evidenceStatus).toBe("missing");
     expect(android?.displayStatus).toBe("not-explored");
     expect(assessment.specialized.notExploredCount).toBe(1);
+    expect(assessment.specialized.missingCount).toBe(0);
+    expect(
+      assessment.specialized.demonstratedCount +
+        assessment.specialized.developingCount +
+        assessment.specialized.missingCount +
+        assessment.specialized.notExploredCount,
+    ).toBe(assessment.specialized.total);
     expect(assessment.score).toBe(
       Math.round(
         (assessment.core.coverage * 0.6 +
@@ -97,12 +106,14 @@ describe("calculateReadiness", () => {
     ).toBe("demonstrated");
     expect(
       assessment.competencies.find(
-        (competency) => competency.competencyId === "ios-swift",
+        (competency) =>
+          competency.competencyId === "ios-development-specialization",
       )?.evidenceStatus,
     ).toBe("demonstrated");
     expect(
       assessment.competencies.find(
-        (competency) => competency.competencyId === "android-kotlin",
+        (competency) =>
+          competency.competencyId === "android-development-specialization",
       )?.displayStatus,
     ).toBe("not-explored");
   });
@@ -117,12 +128,14 @@ describe("calculateReadiness", () => {
 
     expect(
       assessment.competencies.find(
-        (competency) => competency.competencyId === "android-kotlin",
+        (competency) =>
+          competency.competencyId === "android-development-specialization",
       )?.evidenceStatus,
     ).toBe("demonstrated");
     expect(
       assessment.competencies.find(
-        (competency) => competency.competencyId === "ios-swift",
+        (competency) =>
+          competency.competencyId === "ios-development-specialization",
       )?.displayStatus,
     ).toBe("not-explored");
   });

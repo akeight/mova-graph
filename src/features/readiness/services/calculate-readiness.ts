@@ -43,13 +43,13 @@ function summarizeTier(
 ): TierSummary {
   return {
     demonstratedCount: competencies.filter(
-      (competency) => competency.evidenceStatus === "demonstrated",
+      (competency) => competency.displayStatus === "demonstrated",
     ).length,
     developingCount: competencies.filter(
-      (competency) => competency.evidenceStatus === "developing",
+      (competency) => competency.displayStatus === "developing",
     ).length,
     missingCount: competencies.filter(
-      (competency) => competency.evidenceStatus === "missing",
+      (competency) => competency.displayStatus === "missing",
     ).length,
     notExploredCount: competencies.filter(
       (competency) => competency.displayStatus === "not-explored",
