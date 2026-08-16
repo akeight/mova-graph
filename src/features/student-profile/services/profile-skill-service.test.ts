@@ -124,6 +124,7 @@ import {
           result.courses[0].skillIds,
         ).toEqual([
           "automated-testing",
+          "software-testing",
         ]);
   
         expect(
@@ -170,6 +171,23 @@ import {
               "software-testing",
           )?.status,
         ).toBe("demonstrated");
+      });
+
+      it("expands implications when renaming to a canonical technology", () => {
+        const result =
+          renameProfileSkill(
+            profile,
+            "unit-testing",
+            "Next.js",
+          );
+
+        expect(
+          result.courses[0].skillIds,
+        ).toEqual([
+          "nextjs",
+          "react",
+          "frontend-development",
+        ]);
       });
     },
   );

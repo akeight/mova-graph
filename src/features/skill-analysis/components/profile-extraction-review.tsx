@@ -14,6 +14,10 @@ import {
 
 import { cn } from "@/lib/utils";
 
+import {
+  expandEvidenceImplications,
+} from "@/features/goals/services/normalize-evidence";
+
 import type {
   CourseProgress,
   ExperienceProgress,
@@ -21,9 +25,14 @@ import type {
 
 import type {
   ApprovedProfileItem,
+  ExtractedSkill,
   ProfileItemExtraction,
   ProfileItemKind,
 } from "../types/profile-item-extraction";
+
+import {
+  shouldPreselectExtractedSkill,
+} from "../services/normalize-extraction";
 
 type ProfileExtractionReviewProps = {
   onAdd: (
@@ -36,6 +45,22 @@ type ApiErrorResponse = {
 };
 
 const MINIMUM_TEXT_LENGTH = 20;
+
+function isDirectSkill(skill: ExtractedSkill) {
+  return skill.provenance !== "derived";
+}
+
+function evidenceConfidenceLabel(skill: ExtractedSkill) {
+  if (skill.normalizationMethod === "unmapped") {
+    return null;
+  }
+
+  if (skill.confidence < 0.6) {
+    return "Low-confidence evidence match";
+  }
+
+  return `${Math.round(skill.confidence * 100)}% evidence confidence`;
+}
 
 export function ProfileExtractionReview({
   onAdd,
@@ -86,7 +111,8 @@ export function ProfileExtractionReview({
     extraction?.skills.filter((skill) =>
       selectedSkillIds.includes(
         skill.id,
-      ),
+      ) &&
+      skill.provenance !== "derived",
     ) ?? [];
 
   const resetExtraction = () => {
@@ -164,9 +190,9 @@ export function ProfileExtractionReview({
       );
 
       setSelectedSkillIds(
-        result.skills.map(
-          (skill) => skill.id,
-        ),
+        result.skills
+          .filter(shouldPreselectExtractedSkill)
+          .map((skill) => skill.id),
       );
     } catch (caughtError) {
       setError(
@@ -421,8 +447,9 @@ export function ProfileExtractionReview({
                   <h3 className="mt-1 font-semibold">
                     Mova found{" "}
                     {
-                      extraction.skills
-                        .length
+                      extraction.skills.filter(
+                        isDirectSkill,
+                      ).length
                     }{" "}
                     possible skills
                   </h3>
@@ -535,11 +562,22 @@ export function ProfileExtractionReview({
                   Approve skills
                 </legend>
 
-                {extraction.skills.map(
-                  (skill) => {
+                {extraction.skills
+                  .filter(isDirectSkill)
+                  .map((skill) => {
                     const isSelected =
                       selectedSkillIds.includes(
                         skill.id,
+                      );
+
+                    const impliedSkills =
+                      expandEvidenceImplications(
+                        skill.id,
+                      );
+
+                    const confidenceLabel =
+                      evidenceConfidenceLabel(
+                        skill,
                       );
 
                     return (
@@ -586,30 +624,55 @@ export function ProfileExtractionReview({
                         <span className="min-w-0 flex-1">
                           <span className="flex flex-wrap items-center justify-between gap-2">
                             <span className="text-sm font-semibold">
-                              {
-                                skill.name
-                              }
+                              {skill.name}
                             </span>
 
-                            <span className="rounded-full border bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                              {Math.round(
-                                skill.confidence *
-                                  100,
-                              )}
-                              % confidence
+                            <span className="flex flex-wrap items-center gap-1.5">
+                              {skill.category ? (
+                                <span className="rounded-full border bg-background px-2 py-0.5 text-[11px] font-medium capitalize text-muted-foreground">
+                                  {skill.category}
+                                </span>
+                              ) : null}
+
+                              {confidenceLabel ? (
+                                <span className="rounded-full border bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                                  {confidenceLabel}
+                                </span>
+                              ) : null}
                             </span>
                           </span>
+
+                          {skill.normalizationMethod ===
+                          "unmapped" ? (
+                            <span className="mt-1 block text-xs text-muted-foreground">
+                              Not yet mapped to a MOVa career
+                              evidence category
+                            </span>
+                          ) : skill.sourcePhrase ? (
+                            <span className="mt-1 block text-xs text-muted-foreground">
+                              Mapped from: &quot;{skill.sourcePhrase}&quot;
+                            </span>
+                          ) : null}
 
                           <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
-                            {
-                              skill.evidence
-                            }
+                            {skill.evidence}
                           </span>
+
+                          {impliedSkills.length > 0 ? (
+                            <span className="mt-2 block text-xs text-muted-foreground">
+                              Also contributes to:{" "}
+                              {impliedSkills
+                                .map(
+                                  (implied) =>
+                                    implied.name,
+                                )
+                                .join(", ")}
+                            </span>
+                          ) : null}
                         </span>
                       </label>
                     );
-                  },
-                )}
+                  })}
               </fieldset>
 
               <button

@@ -5,7 +5,11 @@ import { careerRoles } from "./career-roles";
 import {
   createEvidenceLookupKey,
   evidenceSkills,
+  findDuplicateImplications,
+  findEvidenceImplicationCycles,
   findEvidenceLookupConflicts,
+  findMissingImplicationTargets,
+  findSelfImplications,
 } from "./evidence-skills";
 
 describe("career model invariants", () => {
@@ -112,6 +116,57 @@ describe("career model invariants", () => {
         }
       }
     }
+  });
+
+  it("requires a unique canonical name for every evidence skill", () => {
+    const names = evidenceSkills.map((skill) =>
+      createEvidenceLookupKey(skill.name),
+    );
+
+    expect(new Set(names).size).toBe(names.length);
+  });
+
+  it("uses only technology or capability categories", () => {
+    for (const skill of evidenceSkills) {
+      expect(["technology", "capability"]).toContain(skill.category);
+    }
+  });
+
+  it("requires a description on every capability", () => {
+    for (const skill of evidenceSkills) {
+      if (skill.category === "capability") {
+        expect(skill.description?.trim().length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("requires implication targets to exist without self-edges or duplicates", () => {
+    expect(findMissingImplicationTargets()).toEqual([]);
+    expect(findSelfImplications()).toEqual([]);
+    expect(findDuplicateImplications()).toEqual([]);
+  });
+
+  it("rejects cycles in the implication graph", () => {
+    expect(findEvidenceImplicationCycles()).toEqual([]);
+  });
+
+  it("detects a synthetic implication cycle", () => {
+    expect(
+      findEvidenceImplicationCycles([
+        {
+          id: "a",
+          name: "A",
+          category: "technology",
+          implies: ["b"],
+        },
+        {
+          id: "b",
+          name: "B",
+          category: "technology",
+          implies: ["a"],
+        },
+      ]),
+    ).toEqual([["a", "b", "a"]]);
   });
 
   it("gives every supported career at least one core and one common competency", () => {

@@ -35,6 +35,10 @@ import { reconcileProfileSkills } from
 import { getSkillContributionStatus } from
   "../utils/profile-item-status";
 
+import {
+  normalizeEvidenceNames,
+} from "@/features/goals/services/normalize-evidence";
+
 type StudentProfileFormProps = {
   profile: StudentProfile;
   onChange: (profile: StudentProfile) => void;
@@ -45,34 +49,23 @@ function createId(prefix: string): string {
   return `${prefix}-${crypto.randomUUID()}`;
 }
 
-function createSkillId(name: string): string {
-  return name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
-function parseSkillNames(
+function parseSkillInput(
   value: string,
-): string[] {
-  return Array.from(
-    new Map(
-      value
-        .split(",")
-        .map((skill) => skill.trim())
-        .filter(Boolean)
-        .map((skill) => [
-          createSkillId(skill),
-          skill,
-        ]),
-    ).values(),
+) {
+  return normalizeEvidenceNames(
+    value
+      .split(",")
+      .map((skill) => skill.trim())
+      .filter(Boolean),
   );
 }
 
-function mergeSkills(
+function mergeNormalizedSkills(
   currentSkills: StudentSkill[],
-  skillNames: string[],
+  incomingSkills: Array<{
+    id: string;
+    name: string;
+  }>,
   status: StudentSkill["status"],
 ): StudentSkill[] {
   const skills = new Map(
@@ -82,16 +75,15 @@ function mergeSkills(
     ]),
   );
 
-  for (const name of skillNames) {
-    const id = createSkillId(name);
+  for (const incoming of incomingSkills) {
     const existingSkill =
-      skills.get(id);
+      skills.get(incoming.id);
 
-    skills.set(id, {
-      id,
+    skills.set(incoming.id, {
+      id: incoming.id,
       name:
         existingSkill?.name ??
-        name,
+        incoming.name,
 
       status:
         existingSkill?.status ===
@@ -157,18 +149,20 @@ export function StudentProfileForm({
   ] = useState("");
 
   const addCourse = () => {
-    const skillNames =
-      parseSkillNames(courseSkills);
+    const normalizedSkills =
+      parseSkillInput(courseSkills);
 
     if (
       !courseTitle.trim() ||
-      skillNames.length === 0
+      normalizedSkills.length === 0
     ) {
       return;
     }
 
     const skillIds =
-      skillNames.map(createSkillId);
+      normalizedSkills.map(
+        (skill) => skill.id,
+      );
 
     const contributionStatus =
       getSkillContributionStatus(
@@ -195,9 +189,9 @@ export function StudentProfileForm({
       ],
 
       skills: contributionStatus
-        ? mergeSkills(
+        ? mergeNormalizedSkills(
             profile.skills,
-            skillNames,
+            normalizedSkills,
             contributionStatus,
           )
         : profile.skills,
@@ -216,20 +210,22 @@ export function StudentProfileForm({
   };
 
   const addExperience = () => {
-    const skillNames =
-      parseSkillNames(
+    const normalizedSkills =
+      parseSkillInput(
         experienceSkills,
       );
 
     if (
       !experienceTitle.trim() ||
-      skillNames.length === 0
+      normalizedSkills.length === 0
     ) {
       return;
     }
 
     const skillIds =
-      skillNames.map(createSkillId);
+      normalizedSkills.map(
+        (skill) => skill.id,
+      );
 
     const contributionStatus =
       getSkillContributionStatus(
@@ -261,9 +257,9 @@ export function StudentProfileForm({
       ],
 
       skills: contributionStatus
-        ? mergeSkills(
+        ? mergeNormalizedSkills(
             profile.skills,
-            skillNames,
+            normalizedSkills,
             contributionStatus,
           )
         : profile.skills,
