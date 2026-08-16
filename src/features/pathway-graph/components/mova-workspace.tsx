@@ -22,6 +22,18 @@ import { useWorkspacePersistence } from
 import type { PersistedWorkspace } from
   "@/features/persistence/types/workspace";
 
+import { OnboardingFlow } from
+  "@/features/onboarding/components/onboarding-flow";
+import {
+  advanceOnboarding,
+  completeOnboarding,
+  initialOnboarding,
+} from "@/features/onboarding/services/onboarding-state";
+import type {
+  OnboardingState,
+  OnboardingStep,
+} from "@/features/onboarding/types/onboarding";
+
 import { calculateReadiness } from
   "@/features/readiness/services/calculate-readiness";
 
@@ -71,7 +83,13 @@ function createDemoProfile(): StudentProfile {
   );
 }
 
-export function MovaWorkspace() {
+type MovaWorkspaceProps = {
+  userEmail: string | null;
+};
+
+export function MovaWorkspace({
+  userEmail,
+}: MovaWorkspaceProps) {
   const [profile, setProfile] =
     useState<StudentProfile>(
       createDemoProfile,
@@ -92,6 +110,11 @@ export function MovaWorkspace() {
       DEFAULT_WORKSPACE_VIEW,
     );
 
+  const [onboarding, setOnboarding] =
+    useState<OnboardingState>(
+      initialOnboarding,
+    );
+
   const handleWorkspaceHydrate =
     useCallback(
       (
@@ -106,6 +129,10 @@ export function MovaWorkspace() {
 
         setSelectedRoleId(
           workspace.selectedRoleId,
+        );
+
+        setOnboarding(
+          workspace.onboarding,
         );
 
         setActiveRecommendationId(
@@ -203,6 +230,7 @@ export function MovaWorkspace() {
     useWorkspacePersistence({
       profile,
       selectedRoleId,
+      onboarding,
       onHydrate:
         handleWorkspaceHydrate,
     });
@@ -277,6 +305,22 @@ export function MovaWorkspace() {
       null,
     );
   };
+
+  const handleOnboardingStepChange = (
+    step: OnboardingStep,
+  ) => {
+    setOnboarding((current) =>
+      advanceOnboarding(current, step),
+    );
+  };
+
+  const handleOnboardingComplete = () => {
+    setOnboarding((current) =>
+      completeOnboarding(current),
+    );
+
+    setActiveView(DEFAULT_WORKSPACE_VIEW);
+  };
   
   if (
     persistence.hydrationStatus ===
@@ -312,6 +356,31 @@ export function MovaWorkspace() {
     );
   }
 
+  if (!onboarding.completed) {
+    return (
+      <OnboardingFlow
+        userEmail={userEmail}
+        profile={profile}
+        roles={careerRoles}
+        selectedRole={selectedRole}
+        selectedRoleId={selectedRoleId}
+        assessment={readinessAssessment}
+        recommendations={recommendations}
+        onRoleSelect={handleRoleSelect}
+        onProfileChange={handleProfileChange}
+        onAddExtractedItem={
+          handleAddExtractedItem
+        }
+        onRestoreDemo={restoreDemo}
+        currentStep={onboarding.step}
+        onStepChange={
+          handleOnboardingStepChange
+        }
+        onFinish={handleOnboardingComplete}
+      />
+    );
+  }
+
   return (
     <WorkspaceShell
       activeView={activeView}
@@ -321,6 +390,7 @@ export function MovaWorkspace() {
         persistence.lastSavedAt
       }
       saveError={persistence.error}
+      userEmail={userEmail}
     >
       {activeView === "dashboard" ? (
         <DashboardView
