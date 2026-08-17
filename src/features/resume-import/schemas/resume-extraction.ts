@@ -43,15 +43,15 @@ export const resumeExtractInputSchema = z.object({
 export const rawResumeItemSchema = z.object({
   kind: resumeItemKindSchema,
   title: z.string().trim().min(1).max(PROFILE_TITLE_MAX),
-  organization: z.string().trim().max(PROFILE_ORGANIZATION_MAX).optional(),
-  startDate: z.string().regex(PROFILE_ITEM_DATE_PATTERN).optional(),
-  endDate: z.string().regex(PROFILE_ITEM_DATE_PATTERN).optional(),
-  isCurrent: z.boolean().optional(),
+  organization: z.string().trim().max(PROFILE_ORGANIZATION_MAX).nullable(),
+  startDate: z.string().regex(PROFILE_ITEM_DATE_PATTERN).nullable(),
+  endDate: z.string().regex(PROFILE_ITEM_DATE_PATTERN).nullable(),
+  isCurrent: z.boolean().nullable(),
   description: z
     .string()
     .trim()
     .max(PROFILE_ITEM_DESCRIPTION_MAX)
-    .optional(),
+    .nullable(),
   sourceExcerpt: z
     .string()
     .trim()
@@ -61,15 +61,15 @@ export const rawResumeItemSchema = z.object({
 });
 
 export const rawResumeExtractionSchema = z.object({
-  candidateName: z.string().trim().max(PROFILE_NAME_MAX).optional(),
-  program: z.string().trim().max(PROFILE_PROGRAM_MAX).optional(),
-  institution: z.string().trim().max(PROFILE_INSTITUTION_MAX).optional(),
+  candidateName: z.string().trim().max(PROFILE_NAME_MAX).nullable(),
+  program: z.string().trim().max(PROFILE_PROGRAM_MAX).nullable(),
+  institution: z.string().trim().max(PROFILE_INSTITUTION_MAX).nullable(),
   skillsSectionExcerpt: z
     .string()
     .trim()
     .min(SKILLS_SECTION_EXCERPT_MIN_CHARS)
     .max(SKILLS_SECTION_EXCERPT_MAX_CHARS)
-    .optional(),
+    .nullable(),
   items: z.array(rawResumeItemSchema).max(24),
   standaloneSkills: z.array(rawEvidenceClaimSchema).max(24),
 });

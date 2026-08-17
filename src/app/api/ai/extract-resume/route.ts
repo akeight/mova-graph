@@ -4,11 +4,25 @@ import { getAuthenticatedUser } from
   "@/features/auth/services/session";
 import { resumeExtractInputSchema } from
   "@/features/resume-import/schemas/resume-extraction";
-import { extractResume } from
-  "@/features/resume-import/services/extract-resume";
+import {
+  describeResumeExtractionFailure,
+  extractResume,
+  ResumeExtractionEmptyError,
+} from "@/features/resume-import/services/extract-resume";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+
+function withDebug<T extends Record<string, unknown>>(
+  body: T,
+  debug: ReturnType<typeof describeResumeExtractionFailure>,
+) {
+  if (process.env.NODE_ENV === "production") {
+    return body;
+  }
+
+  return { ...body, debug };
+}
 
 export async function POST(request: Request) {
   const user = await getAuthenticatedUser();
@@ -55,13 +69,25 @@ export async function POST(request: Request) {
 
     return NextResponse.json(draft);
   } catch (error) {
-    console.error("Resume extraction failed:", error);
+    const debug = describeResumeExtractionFailure(error);
+
+    console.error("Resume extraction failed:", debug);
+
+    if (error instanceof ResumeExtractionEmptyError) {
+      return NextResponse.json(
+        withDebug({ error: error.message }, debug),
+        { status: 422 },
+      );
+    }
 
     return NextResponse.json(
-      {
-        error:
-          "Mova could not analyze that resume. Please try again.",
-      },
+      withDebug(
+        {
+          error:
+            "Mova could not analyze that resume. Please try again.",
+        },
+        debug,
+      ),
       { status: 500 },
     );
   }
