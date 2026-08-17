@@ -206,10 +206,9 @@ export function EditableProfileItemCard({
       skillNames: nextSkillNames,
       ...(kind === "experience"
         ? {
-            organization:
-              organization.trim() || undefined,
-            startDate: startDate.trim() || undefined,
-            endDate: endDate.trim() || undefined,
+            organization: organization.trim(),
+            startDate: startDate.trim(),
+            endDate: endDate.trim(),
           }
         : {}),
     });

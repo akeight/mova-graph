@@ -187,6 +187,81 @@ import {
       expect(result.experiences[0]?.startDate).toBeUndefined();
       expect(result.experiences[0]?.endDate).toBe("2025-08");
     });
+
+    it("clears an explicitly blank organization", () => {
+      const seeded = updateProfileItem(profile, {
+        kind: "experience",
+        itemId: "experience-1",
+        title: "Mobile Project",
+        status: "in-progress",
+        skillNames: ["Mobile Development"],
+        organization: "Acme",
+      });
+
+      const result = updateProfileItem(seeded, {
+        kind: "experience",
+        itemId: "experience-1",
+        title: "Mobile Project",
+        status: "in-progress",
+        skillNames: ["Mobile Development"],
+        organization: "",
+      });
+
+      expect(result.experiences[0]?.organization).toBeUndefined();
+    });
+
+    it("clears explicitly blank startDate and endDate", () => {
+      const seeded = updateProfileItem(profile, {
+        kind: "experience",
+        itemId: "experience-1",
+        title: "Mobile Project",
+        status: "in-progress",
+        skillNames: ["Mobile Development"],
+        startDate: "2025-05",
+        endDate: "2025-08",
+      });
+
+      const result = updateProfileItem(seeded, {
+        kind: "experience",
+        itemId: "experience-1",
+        title: "Mobile Project",
+        status: "in-progress",
+        skillNames: ["Mobile Development"],
+        startDate: "",
+        endDate: "",
+      });
+
+      expect(result.experiences[0]?.startDate).toBeUndefined();
+      expect(result.experiences[0]?.endDate).toBeUndefined();
+    });
+
+    it("preserves organization and dates when those fields are omitted", () => {
+      const seeded = updateProfileItem(profile, {
+        kind: "experience",
+        itemId: "experience-1",
+        title: "Mobile Project",
+        status: "in-progress",
+        skillNames: ["Mobile Development"],
+        organization: "Acme",
+        startDate: "2025-05",
+        endDate: "2025-08",
+      });
+
+      const result = updateProfileItem(seeded, {
+        kind: "experience",
+        itemId: "experience-1",
+        title: "Updated Mobile Project",
+        status: "completed",
+        skillNames: ["Mobile Development", "React"],
+      });
+
+      expect(result.experiences[0]).toMatchObject({
+        title: "Updated Mobile Project",
+        organization: "Acme",
+        startDate: "2025-05",
+        endDate: "2025-08",
+      });
+    });
   });
   
   describe("removeProfileItem", () => {
