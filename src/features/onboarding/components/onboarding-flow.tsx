@@ -140,7 +140,7 @@ export function OnboardingFlow({
         {visibleStep === "build-profile" ? (
           <StepShell
             title="Build your profile"
-            description="MOVa works best when it understands what you've already done."
+            description="Mova works best when it understands what you've already done."
           >
             {startPath === "choice" ? (
               <ResumeStartChoice
@@ -155,8 +155,7 @@ export function OnboardingFlow({
                 mode="onboarding"
                 onApproved={(nextProfile) => {
                   onProfileChange(nextProfile);
-                  setStartPath("manual");
-                  setShowMissing(true);
+                  goTo("career-goal");
                 }}
                 onCancel={() =>
                   setStartPath(

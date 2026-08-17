@@ -25,6 +25,7 @@ export type ResumeDraftItem = {
   description?: string;
   status: "completed" | "in-progress";
   skills: ExtractedSkill[];
+  selectedSkillIds: string[];
   sourceIds: string[];
   existingItemId?: string;
   existingCollection?: "course" | "experience";
@@ -48,6 +49,7 @@ export type ResumeImportDraft = {
   applyProposedName: boolean;
   items: ResumeDraftItem[];
   standaloneSkills: ExtractedSkill[];
+  selectedStandaloneSkillIds: string[];
   possibleDuplicates: DuplicateCandidate[];
 };
 

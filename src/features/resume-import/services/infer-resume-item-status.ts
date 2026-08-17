@@ -15,6 +15,10 @@ export function inferResumeItemStatus(
     | "sourceExcerpt"
   >,
 ): "completed" | "in-progress" {
+  if (item.isCurrent === true) {
+    return "in-progress";
+  }
+
   const excerpt = item.sourceExcerpt;
 
   if (CURRENT_PATTERN.test(excerpt)) {

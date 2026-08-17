@@ -14,7 +14,7 @@ export function ResumeStartChoice({
   return (
     <div className="space-y-4">
       <p className="text-sm leading-relaxed text-muted-foreground">
-        MOVa works best when it understands what you&apos;ve already done.
+        Mova works best when it understands what you&apos;ve already done.
       </p>
 
       <div className="grid gap-3 sm:grid-cols-2">

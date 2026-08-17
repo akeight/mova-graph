@@ -23,6 +23,8 @@ import { isCourseKind } from "../types/resume-import";
 
 import { combineProfileDescriptions } from
   "./combine-profile-descriptions";
+import { approvedSkillIdsFromSelection } from
+  "./resume-draft-skills";
 
 export class ResumeDraftApplyError extends Error {
   constructor(message: string) {
@@ -59,13 +61,19 @@ function persistableDate(value: string | undefined): string | undefined {
   return trimmed;
 }
 
+function approvedItemSkillIds(item: ResumeDraftItem): string[] {
+  return uniqueSkillIds(
+    approvedSkillIdsFromSelection(item.skills, item.selectedSkillIds),
+  );
+}
+
 function draftToCourse(item: ResumeDraftItem): StudentCourse {
   return {
     id: createItemId("course"),
     title: item.title.trim(),
     description: persistableDescription(item.description),
     status: item.status,
-    skillIds: uniqueSkillIds(item.skills.map((skill) => skill.id)),
+    skillIds: approvedItemSkillIds(item),
     kind: isCourseKind(item.kind) ? item.kind : "course",
   };
 }
@@ -76,7 +84,7 @@ function draftToExperience(item: ResumeDraftItem): StudentExperience {
     title: item.title.trim(),
     description: persistableDescription(item.description),
     status: item.status,
-    skillIds: uniqueSkillIds(item.skills.map((skill) => skill.id)),
+    skillIds: approvedItemSkillIds(item),
     kind: isCourseKind(item.kind) ? "work" : item.kind,
     organization: item.organization?.trim() || undefined,
     startDate: persistableDate(item.startDate),
@@ -97,7 +105,7 @@ function unionExistingCourse(
       ),
     skillIds: uniqueSkillIds([
       ...course.skillIds,
-      ...item.skills.map((skill) => skill.id),
+      ...approvedItemSkillIds(item),
     ]),
     kind: course.kind ?? (isCourseKind(item.kind) ? item.kind : "course"),
   };
@@ -119,7 +127,7 @@ function unionExistingExperience(
       ),
     skillIds: uniqueSkillIds([
       ...experience.skillIds,
-      ...item.skills.map((skill) => skill.id),
+      ...approvedItemSkillIds(item),
     ]),
     kind: experience.kind ?? (isCourseKind(item.kind) ? "work" : item.kind),
     organization:
@@ -199,8 +207,13 @@ export function applyResumeDraftToProfile(
     };
   }
 
+  const selectedStandaloneIds = new Set(draft.selectedStandaloneSkillIds);
   const standaloneNames = draft.standaloneSkills
-    .filter((skill) => skill.provenance !== "derived")
+    .filter(
+      (skill) =>
+        selectedStandaloneIds.has(skill.id) &&
+        skill.provenance !== "derived",
+    )
     .map((skill) => skill.name);
 
   if (standaloneNames.length > 0) {

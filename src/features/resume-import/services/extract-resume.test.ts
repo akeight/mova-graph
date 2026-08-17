@@ -113,7 +113,7 @@ describe("normalizeRawResumeExtraction", () => {
 
     const itron = draft.items.find((item) => item.title === "Itron");
 
-    expect(itron?.skills).toEqual([]);
+    expect(itron).toBeUndefined();
   });
 
   it("grounds standalone skills only against the skills section", () => {
@@ -202,5 +202,95 @@ describe("normalizeRawResumeExtraction", () => {
     expect(draft.standaloneSkills.map((skill) => skill.id)).not.toContain(
       "react",
     );
+  });
+
+  it("preselects high-confidence direct evidence and leaves 0.70 unselected", () => {
+    const catalystResume = [
+      "Catalyst",
+      "Built a React dashboard using TypeScript.",
+    ].join("\n");
+
+    const draft = normalizeRawResumeExtraction(
+      "source-1",
+      "swe.pdf",
+      {
+        items: [
+          {
+            kind: "project",
+            title: "Catalyst",
+            sourceExcerpt: catalystResume,
+            skills: [
+              {
+                sourcePhrase: "React",
+                evidence: "Built a React dashboard.",
+                mappings: [{ canonicalSkillId: "react", confidence: 0.92 }],
+              },
+              {
+                sourcePhrase: "TypeScript",
+                evidence: "Used TypeScript.",
+                mappings: [
+                  { canonicalSkillId: "typescript", confidence: 0.7 },
+                ],
+              },
+            ],
+          },
+        ],
+        standaloneSkills: [],
+      },
+      catalystResume,
+    );
+
+    const catalyst = draft.items.find((item) => item.title === "Catalyst");
+
+    expect(catalyst?.selectedSkillIds).toContain("react");
+    expect(catalyst?.selectedSkillIds).not.toContain("typescript");
+    expect(
+      catalyst?.skills.some(
+        (skill) => skill.id === "frontend-development" && skill.provenance === "derived",
+      ),
+    ).toBe(true);
+    expect(catalyst?.selectedSkillIds).not.toContain("frontend-development");
+  });
+
+  it("does not turn standalone Skills evidence into activity-backed work on a one-item resume", () => {
+    const oneItemResume = [
+      "Software Engineering Intern — Acme",
+      "Built a Next.js dashboard.",
+      "Skills: AWS",
+    ].join("\n");
+
+    const draft = normalizeRawResumeExtraction(
+      "source-1",
+      "swe.pdf",
+      {
+        skillsSectionExcerpt: "Skills: AWS",
+        items: [
+          {
+            kind: "work",
+            title: "Software Engineering Intern",
+            organization: "Acme",
+            sourceExcerpt: oneItemResume,
+            skills: [
+              {
+                sourcePhrase: "AWS",
+                evidence: "Skills: AWS",
+                mappings: [{ canonicalSkillId: "aws", confidence: 0.99 }],
+              },
+            ],
+          },
+        ],
+        standaloneSkills: [
+          {
+            sourcePhrase: "AWS",
+            evidence: "Listed under Skills.",
+            mappings: [{ canonicalSkillId: "aws", confidence: 0.9 }],
+          },
+        ],
+      },
+      oneItemResume,
+    );
+
+    expect(draft.items).toHaveLength(0);
+    expect(draft.standaloneSkills.map((skill) => skill.id)).toContain("aws");
   });
 });

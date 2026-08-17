@@ -11,10 +11,33 @@ import {
   SOURCE_EXCERPT_MIN_CHARS,
 } from "../constants";
 
+export type ItemExcerptContext = {
+  itemCount: number;
+  hasSkillsSection: boolean;
+};
+
+function isWholeResumeExcerpt(
+  excerpt: string,
+  resumeText: string,
+  maxChars: number,
+): boolean {
+  const excerptKey = createEvidenceLookupKey(excerpt);
+  const resumeKey = createEvidenceLookupKey(resumeText);
+
+  if (excerptKey && resumeKey && excerptKey === resumeKey) {
+    return true;
+  }
+
+  return (
+    resumeText.length > maxChars &&
+    excerpt.length > resumeText.length * MAX_EXCERPT_RESUME_FRACTION
+  );
+}
+
 export function isItemExcerptAcceptable(
   excerpt: string,
   resumeText: string,
-  itemCount: number,
+  context: ItemExcerptContext,
 ): boolean {
   const trimmed = excerpt.trim();
 
@@ -29,21 +52,15 @@ export function isItemExcerptAcceptable(
     return false;
   }
 
-    if (itemCount > 1) {
-      const excerptKey = createEvidenceLookupKey(trimmed);
-      const resumeKey = createEvidenceLookupKey(resumeText);
+  const guardWholeResume =
+    context.itemCount > 1 || context.hasSkillsSection;
 
-      if (excerptKey && resumeKey && excerptKey === resumeKey) {
-        return false;
-      }
-
-      if (
-        resumeText.length > SOURCE_EXCERPT_MAX_CHARS &&
-        trimmed.length > resumeText.length * MAX_EXCERPT_RESUME_FRACTION
-      ) {
-        return false;
-      }
-    }
+  if (
+    guardWholeResume &&
+    isWholeResumeExcerpt(trimmed, resumeText, SOURCE_EXCERPT_MAX_CHARS)
+  ) {
+    return false;
+  }
 
   return true;
 }
@@ -66,20 +83,15 @@ export function isSkillsSectionExcerptAcceptable(
     return false;
   }
 
-  if (itemCount > 0) {
-    const excerptKey = createEvidenceLookupKey(trimmed);
-    const resumeKey = createEvidenceLookupKey(resumeText);
-
-    if (excerptKey && resumeKey && excerptKey === resumeKey) {
-      return false;
-    }
-
-    if (
-      resumeText.length > SKILLS_SECTION_EXCERPT_MAX_CHARS &&
-      trimmed.length > resumeText.length * MAX_EXCERPT_RESUME_FRACTION
-    ) {
-      return false;
-    }
+  if (
+    itemCount > 0 &&
+    isWholeResumeExcerpt(
+      trimmed,
+      resumeText,
+      SKILLS_SECTION_EXCERPT_MAX_CHARS,
+    )
+  ) {
+    return false;
   }
 
   return true;

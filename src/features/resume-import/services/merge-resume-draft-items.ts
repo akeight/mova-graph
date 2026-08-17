@@ -1,35 +1,11 @@
-import type { ExtractedSkill } from
-  "@/features/skill-analysis/types/profile-item-extraction";
-
 import type { ResumeDraftItem } from "../types/resume-import";
 
 import { combineProfileDescriptions } from
   "./combine-profile-descriptions";
-
-function mergeSkills(
-  left: ExtractedSkill[],
-  right: ExtractedSkill[],
-): ExtractedSkill[] {
-  const byId = new Map<string, ExtractedSkill>();
-
-  for (const skill of [...left, ...right]) {
-    const existing = byId.get(skill.id);
-
-    if (!existing) {
-      byId.set(skill.id, skill);
-      continue;
-    }
-
-    if (
-      existing.provenance === "derived" &&
-      skill.provenance !== "derived"
-    ) {
-      byId.set(skill.id, skill);
-    }
-  }
-
-  return Array.from(byId.values());
-}
+import {
+  mergeExtractedSkills,
+  mergeSelectedSkillIds,
+} from "./resume-draft-skills";
 
 export function mergeResumeDraftItems(
   left: ResumeDraftItem,
@@ -46,6 +22,8 @@ export function mergeResumeDraftItems(
           ? leftTitle
           : rightTitle;
 
+  const skills = mergeExtractedSkills(left.skills, right.skills);
+
   return {
     id: left.id,
     kind: left.kind,
@@ -61,7 +39,12 @@ export function mergeResumeDraftItems(
       left.status === "completed" || right.status === "completed"
         ? "completed"
         : "in-progress",
-    skills: mergeSkills(left.skills, right.skills),
+    skills,
+    selectedSkillIds: mergeSelectedSkillIds(
+      skills,
+      left.selectedSkillIds,
+      right.selectedSkillIds,
+    ),
     sourceIds: Array.from(
       new Set([...left.sourceIds, ...right.sourceIds]),
     ),

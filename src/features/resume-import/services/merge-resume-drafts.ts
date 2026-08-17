@@ -14,6 +14,10 @@ import {
 } from "./find-resume-item-duplicates";
 import { mergeResumeDraftItems } from
   "./merge-resume-draft-items";
+import {
+  mergeExtractedSkills,
+  mergeSelectedSkillIds,
+} from "./resume-draft-skills";
 
 function toComparable(item: ResumeDraftItem): ComparableResumeItem {
   return {
@@ -46,19 +50,81 @@ function profileItemsToComparable(
   ];
 }
 
-function mergeStandalone(
-  left: ResumeImportDraft["standaloneSkills"],
-  right: ResumeImportDraft["standaloneSkills"],
-) {
-  const byId = new Map(left.map((skill) => [skill.id, skill]));
-
-  for (const skill of right) {
-    if (!byId.has(skill.id)) {
-      byId.set(skill.id, skill);
-    }
+function existingCollectionFor(
+  profile: StudentProfile,
+  itemId: string,
+): "course" | "experience" | undefined {
+  if (profile.courses.some((course) => course.id === itemId)) {
+    return "course";
   }
 
-  return Array.from(byId.values());
+  if (profile.experiences.some((experience) => experience.id === itemId)) {
+    return "experience";
+  }
+
+  return undefined;
+}
+
+function mergeStandalone(
+  left: ResumeImportDraft,
+  right: ResumeImportDraft,
+): Pick<
+  ResumeImportDraft,
+  "standaloneSkills" | "selectedStandaloneSkillIds"
+> {
+  const standaloneSkills = mergeExtractedSkills(
+    left.standaloneSkills,
+    right.standaloneSkills,
+  );
+
+  return {
+    standaloneSkills,
+    selectedStandaloneSkillIds: mergeSelectedSkillIds(
+      standaloneSkills,
+      left.selectedStandaloneSkillIds,
+      right.selectedStandaloneSkillIds,
+    ),
+  };
+}
+
+function rewriteDuplicateCandidates(
+  candidates: DuplicateCandidate[],
+  resolvedId: string,
+  removedId: string,
+  survivingId: string,
+): DuplicateCandidate[] {
+  const seenPairs = new Set<string>();
+  const rewritten: DuplicateCandidate[] = [];
+
+  for (const candidate of candidates) {
+    if (candidate.id === resolvedId) {
+      continue;
+    }
+
+    const leftId =
+      candidate.leftId === removedId ? survivingId : candidate.leftId;
+    const rightId =
+      candidate.rightId === removedId ? survivingId : candidate.rightId;
+
+    if (leftId === rightId) {
+      continue;
+    }
+
+    const pairKey = [leftId, rightId].sort().join(":");
+
+    if (seenPairs.has(pairKey)) {
+      continue;
+    }
+
+    seenPairs.add(pairKey);
+    rewritten.push({
+      ...candidate,
+      leftId,
+      rightId,
+    });
+  }
+
+  return rewritten;
 }
 
 export function mergeResumeDrafts(
@@ -71,6 +137,7 @@ export function mergeResumeDrafts(
       applyProposedName: false,
       items: [],
       standaloneSkills: [],
+      selectedStandaloneSkillIds: [],
       possibleDuplicates: [],
     };
   }
@@ -80,6 +147,9 @@ export function mergeResumeDrafts(
     sources: [...drafts[0].sources],
     items: [...drafts[0].items],
     standaloneSkills: [...drafts[0].standaloneSkills],
+    selectedStandaloneSkillIds: [
+      ...drafts[0].selectedStandaloneSkillIds,
+    ],
     possibleDuplicates: [],
   };
 
@@ -132,10 +202,7 @@ export function mergeResumeDrafts(
       proposedName: merged.proposedName || draft.proposedName,
       applyProposedName: merged.applyProposedName,
       items: nextItems,
-      standaloneSkills: mergeStandalone(
-        merged.standaloneSkills,
-        draft.standaloneSkills,
-      ),
+      ...mergeStandalone(merged, draft),
       possibleDuplicates,
     };
   }
@@ -151,7 +218,9 @@ export function mergeResumeDrafts(
       ...merged,
       items: merged.items.map((item) => {
         const match = matches.find(
-          (candidate) => candidate.leftId === item.id,
+          (candidate) =>
+            candidate.leftId === item.id &&
+            candidate.confidence === "exact",
         );
 
         if (!match) {
@@ -195,6 +264,7 @@ export function applyDuplicateDecision(
   draft: ResumeImportDraft,
   duplicateId: string,
   decision: "merge" | "keep-separate",
+  existingProfile?: StudentProfile,
 ): ResumeImportDraft {
   const duplicate = draft.possibleDuplicates.find(
     (item) => item.id === duplicateId,
@@ -216,25 +286,63 @@ export function applyDuplicateDecision(
   const left = draft.items.find((item) => item.id === duplicate.leftId);
   const right = draft.items.find((item) => item.id === duplicate.rightId);
 
-  if (!left || !right) {
+  if (left && right) {
+    const mergedItem = mergeResumeDraftItems(left, right);
+
     return {
       ...draft,
-      possibleDuplicates: draft.possibleDuplicates.filter(
-        (item) => item.id !== duplicateId,
+      items: [
+        ...draft.items.filter(
+          (item) => item.id !== left.id && item.id !== right.id,
+        ),
+        mergedItem,
+      ],
+      possibleDuplicates: rewriteDuplicateCandidates(
+        draft.possibleDuplicates,
+        duplicate.id,
+        right.id,
+        mergedItem.id,
       ),
     };
   }
 
-  const mergedItem = mergeResumeDraftItems(left, right);
+  if (left && !right && existingProfile) {
+    const existingCollection = existingCollectionFor(
+      existingProfile,
+      duplicate.rightId,
+    );
+
+    if (!existingCollection) {
+      return {
+        ...draft,
+        possibleDuplicates: draft.possibleDuplicates.filter(
+          (item) => item.id !== duplicateId,
+        ),
+      };
+    }
+
+    return {
+      ...draft,
+      items: draft.items.map((item) =>
+        item.id === left.id
+          ? {
+              ...item,
+              existingItemId: duplicate.rightId,
+              existingCollection,
+            }
+          : item,
+      ),
+      possibleDuplicates: rewriteDuplicateCandidates(
+        draft.possibleDuplicates,
+        duplicate.id,
+        duplicate.rightId,
+        left.id,
+      ),
+    };
+  }
 
   return {
     ...draft,
-    items: [
-      ...draft.items.filter(
-        (item) => item.id !== left.id && item.id !== right.id,
-      ),
-      mergedItem,
-    ],
     possibleDuplicates: draft.possibleDuplicates.filter(
       (item) => item.id !== duplicateId,
     ),

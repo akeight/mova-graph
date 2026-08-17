@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from
   "@/features/auth/services/session";
 
+import { MAX_RESUME_FILE_BYTES } from
+  "@/features/resume-import/constants";
 import { parseResumeDocument, ResumeParseError } from
   "@/features/resume-import/services/parse-resume-document";
 import { sanitizeResumeFilename } from
@@ -44,6 +46,17 @@ export async function POST(request: Request) {
       {
         error:
           "Upload a PDF or DOCX, or paste your resume text instead.",
+      },
+      { status: 400 },
+    );
+  }
+
+  if (file.size > MAX_RESUME_FILE_BYTES) {
+    return NextResponse.json(
+      {
+        error:
+          "That file is too large. Use a file under 2 MB, or paste the text.",
+        code: "too-large",
       },
       { status: 400 },
     );

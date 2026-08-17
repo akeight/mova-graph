@@ -75,9 +75,17 @@ function datesConflict(
   right: ComparableResumeItem,
 ): boolean {
   const leftStart = parseDateBound(left.startDate, "start");
-  const leftEnd = parseDateBound(left.endDate ?? left.startDate, "end");
   const rightStart = parseDateBound(right.startDate, "start");
-  const rightEnd = parseDateBound(right.endDate ?? right.startDate, "end");
+  const leftEnd = left.endDate
+    ? parseDateBound(left.endDate, "end")
+    : leftStart === null
+      ? null
+      : Number.POSITIVE_INFINITY;
+  const rightEnd = right.endDate
+    ? parseDateBound(right.endDate, "end")
+    : rightStart === null
+      ? null
+      : Number.POSITIVE_INFINITY;
 
   if (
     leftStart === null ||

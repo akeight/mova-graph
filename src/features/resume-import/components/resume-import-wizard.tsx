@@ -12,13 +12,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { PROFILE_ITEM_DESCRIPTION_MAX } from
-  "@/features/student-profile/constants";
-import { addSelfReportedSkills } from
-  "@/features/student-profile/services/profile-self-reported-skill-service";
+import {
+  PROFILE_ITEM_DATE_PATTERN,
+  PROFILE_ITEM_DESCRIPTION_MAX,
+} from "@/features/student-profile/constants";
 import type { StudentProfile } from
   "@/features/student-profile/types/student-profile";
 
+import { ResumeDraftEvidenceEditor } from
+  "./resume-draft-evidence-editor";
 import {
   MAX_RESUME_SOURCES,
   MAX_RESUME_TEXT_CHARS,
@@ -35,13 +37,19 @@ import {
   extractResumeSource,
   parseResumeFile,
 } from "../services/resume-import-client";
-
+import { canAddResumeSourceText } from
+  "../services/resume-session-capacity";
+import {
+  createManualDraftSkill,
+  isDirectDraftSkill,
+} from "../services/resume-draft-skills";
 import type {
   ResumeDraftItem,
   ResumeImportDraft,
   ResumeImportMode,
   ResumeItemKind,
 } from "../types/resume-import";
+import { isCourseKind } from "../types/resume-import";
 
 type WizardStage =
   | "collect"
@@ -74,6 +82,55 @@ function createSourceId(): string {
   return crypto.randomUUID();
 }
 
+function isDateDraftInput(value: string): boolean {
+  return value === "" || /^\d{0,4}(-\d{0,2})?$/.test(value);
+}
+
+function resumeItemTypeLabel(kind: ResumeDraftItem["kind"]): string {
+  switch (kind) {
+    case "course":
+      return "Course";
+    case "certification":
+      return "Certification";
+    case "project":
+      return "Project";
+    case "volunteer":
+      return "Volunteer";
+    case "leadership":
+      return "Leadership";
+    case "work":
+      return "Work";
+    default:
+      return "Experience";
+  }
+}
+
+function existingDuplicateDisplay(
+  profile: StudentProfile,
+  itemId: string,
+): { title: string; organization?: string; type: string } | null {
+  const course = profile.courses.find((item) => item.id === itemId);
+
+  if (course) {
+    return {
+      title: course.title,
+      type: resumeItemTypeLabel(course.kind ?? "course"),
+    };
+  }
+
+  const experience = profile.experiences.find((item) => item.id === itemId);
+
+  if (experience) {
+    return {
+      title: experience.title,
+      organization: experience.organization,
+      type: resumeItemTypeLabel(experience.kind ?? "work"),
+    };
+  }
+
+  return null;
+}
+
 export function ResumeImportWizard({
   baselineProfile,
   mode,
@@ -87,23 +144,38 @@ export function ResumeImportWizard({
   const [analysisIndex, setAnalysisIndex] = useState(0);
   const [draft, setDraft] = useState<ResumeImportDraft | null>(null);
 
-  const canAnalyze = sources.length > 0;
+  const sourceTotalChars = sources.reduce(
+    (total, source) => total + source.text.length,
+    0,
+  );
+  const canAnalyze =
+    sources.length > 0 &&
+    canAddResumeSourceText(0, sourceTotalChars).ok;
 
   const addParsedSource = (displayName: string, text: string) => {
-    setSources((current) => {
-      if (current.length >= MAX_RESUME_SOURCES) {
-        return current;
-      }
+    const clipped = text.slice(0, MAX_RESUME_TEXT_CHARS);
 
-      return [
-        ...current,
-        {
-          id: createSourceId(),
-          displayName,
-          text: text.slice(0, MAX_RESUME_TEXT_CHARS),
-        },
-      ];
-    });
+    if (sources.length >= MAX_RESUME_SOURCES) {
+      setError(`You can add up to ${MAX_RESUME_SOURCES} resume sources.`);
+      return;
+    }
+
+    const capacity = canAddResumeSourceText(sourceTotalChars, clipped.length);
+
+    if (!capacity.ok) {
+      setError(capacity.error);
+      return;
+    }
+
+    setSources((current) => [
+      ...current,
+      {
+        id: createSourceId(),
+        displayName,
+        text: clipped,
+      },
+    ]);
+    setError(null);
   };
 
   const handleFile = async (fileList: FileList | null) => {
@@ -294,6 +366,7 @@ export function ResumeImportWizard({
     return (
       <DuplicateStage
         draft={draft}
+        existingProfile={baselineProfile}
         error={error}
         onChange={setDraft}
         onContinue={() => setStage("review")}
@@ -365,12 +438,14 @@ function ResumeMissingInner({
 
 function DuplicateStage({
   draft,
+  existingProfile,
   error,
   onChange,
   onContinue,
   onCancel,
 }: {
   draft: ResumeImportDraft;
+  existingProfile: StudentProfile;
   error: string | null;
   onChange: (draft: ResumeImportDraft) => void;
   onContinue: () => void;
@@ -384,11 +459,18 @@ function DuplicateStage({
   }
   const left = draft.items.find((item) => item.id === current.leftId);
   const right =
-    draft.items.find((item) => item.id === current.rightId) ??
-    null;
+    draft.items.find((item) => item.id === current.rightId) ?? null;
+  const existingDisplay = right
+    ? null
+    : existingDuplicateDisplay(existingProfile, current.rightId);
 
   const decide = (decision: "merge" | "keep-separate") => {
-    const next = applyDuplicateDecision(draft, current.id, decision);
+    const next = applyDuplicateDecision(
+      draft,
+      current.id,
+      decision,
+      existingProfile,
+    );
     onChange(next);
 
     if (next.possibleDuplicates.length === 0) {
@@ -402,7 +484,7 @@ function DuplicateStage({
       <p className="text-sm text-muted-foreground">{current.reason}</p>
       <div className="grid gap-3 sm:grid-cols-2">
         <DuplicateCard item={left} />
-        <DuplicateCard item={right} />
+        <DuplicateCard item={right} existing={existingDisplay} />
       </div>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       <div className="flex flex-wrap justify-between gap-3">
@@ -427,21 +509,46 @@ function DuplicateStage({
   );
 }
 
-function DuplicateCard({ item }: { item: ResumeDraftItem | undefined | null }) {
-  if (!item) {
+function DuplicateCard({
+  item,
+  existing,
+}: {
+  item: ResumeDraftItem | undefined | null;
+  existing?: { title: string; organization?: string; type: string } | null;
+}) {
+  if (item) {
     return (
-      <div className="rounded-xl border p-4 text-sm text-muted-foreground">
-        Existing profile item
+      <div className="rounded-xl border bg-card p-4">
+        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+          {resumeItemTypeLabel(item.kind)}
+        </p>
+        <p className="mt-1 font-medium">{item.title}</p>
+        {item.organization ? (
+          <p className="text-xs text-muted-foreground">{item.organization}</p>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (existing) {
+    return (
+      <div className="rounded-xl border bg-card p-4">
+        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+          {existing.type}
+        </p>
+        <p className="mt-1 font-medium">{existing.title}</p>
+        {existing.organization ? (
+          <p className="text-xs text-muted-foreground">
+            {existing.organization}
+          </p>
+        ) : null}
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border bg-card p-4">
-      <p className="font-medium">{item.title}</p>
-      {item.organization ? (
-        <p className="text-xs text-muted-foreground">{item.organization}</p>
-      ) : null}
+    <div className="rounded-xl border p-4 text-sm text-muted-foreground">
+      Existing profile item
     </div>
   );
 }
@@ -481,6 +588,7 @@ function DraftReviewStage({
           title: kind === "course" ? "New course" : "New experience",
           status: "in-progress",
           skills: [],
+          selectedSkillIds: [],
           sourceIds: [],
         },
       ],
@@ -532,6 +640,35 @@ function DraftReviewStage({
           Use name from resume: {draft.proposedName}
         </label>
       ) : null}
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block space-y-1.5">
+          <span className="text-xs font-medium">Program</span>
+          <Input
+            value={draft.program ?? ""}
+            placeholder="B.S. Software Engineering"
+            onChange={(event) =>
+              onChange({
+                ...draft,
+                program: event.target.value,
+              })
+            }
+          />
+        </label>
+        <label className="block space-y-1.5">
+          <span className="text-xs font-medium">Institution</span>
+          <Input
+            value={draft.institution ?? ""}
+            placeholder="State University"
+            onChange={(event) =>
+              onChange({
+                ...draft,
+                institution: event.target.value,
+              })
+            }
+          />
+        </label>
+      </div>
 
       <ReviewSection title="Experience" items={sections.experience} draft={draft} onChange={onChange} />
       <ReviewSection title="Projects" items={sections.projects} draft={draft} onChange={onChange} />
@@ -613,20 +750,82 @@ function ReviewSection({
                   })
                 }
               />
-              <Input
-                value={item.organization ?? ""}
-                placeholder="Organization"
-                onChange={(event) =>
-                  onChange({
-                    ...draft,
-                    items: draft.items.map((current) =>
-                      current.id === item.id
-                        ? { ...current, organization: event.target.value }
-                        : current,
-                    ),
-                  })
-                }
-              />
+              {isCourseKind(item.kind) ? null : (
+                <Input
+                  value={item.organization ?? ""}
+                  placeholder="Organization"
+                  onChange={(event) =>
+                    onChange({
+                      ...draft,
+                      items: draft.items.map((current) =>
+                        current.id === item.id
+                          ? { ...current, organization: event.target.value }
+                          : current,
+                      ),
+                    })
+                  }
+                />
+              )}
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Input
+                  value={item.startDate ?? ""}
+                  placeholder="Start YYYY or YYYY-MM"
+                  onChange={(event) => {
+                    const value = event.target.value;
+
+                    if (!isDateDraftInput(value)) {
+                      return;
+                    }
+
+                    onChange({
+                      ...draft,
+                      items: draft.items.map((current) =>
+                        current.id === item.id
+                          ? {
+                              ...current,
+                              startDate: value || undefined,
+                            }
+                          : current,
+                      ),
+                    });
+                  }}
+                />
+                <Input
+                  value={item.endDate ?? ""}
+                  placeholder="End YYYY or YYYY-MM"
+                  onChange={(event) => {
+                    const value = event.target.value;
+
+                    if (!isDateDraftInput(value)) {
+                      return;
+                    }
+
+                    onChange({
+                      ...draft,
+                      items: draft.items.map((current) =>
+                        current.id === item.id
+                          ? {
+                              ...current,
+                              endDate: value || undefined,
+                            }
+                          : current,
+                      ),
+                    });
+                  }}
+                />
+              </div>
+              {item.startDate &&
+              !PROFILE_ITEM_DATE_PATTERN.test(item.startDate) ? (
+                <p className="text-xs text-destructive">
+                  Use YYYY or YYYY-MM, with months 01–12.
+                </p>
+              ) : null}
+              {item.endDate &&
+              !PROFILE_ITEM_DATE_PATTERN.test(item.endDate) ? (
+                <p className="text-xs text-destructive">
+                  Use YYYY or YYYY-MM, with months 01–12.
+                </p>
+              ) : null}
               <Textarea
                 value={item.description ?? ""}
                 rows={3}
@@ -682,18 +881,17 @@ function ReviewSection({
               Found in {item.sourceIds.length} resumes
             </p>
           ) : null}
-          <div className="flex flex-wrap gap-1.5">
-            {item.skills
-              .filter((skill) => skill.provenance !== "derived")
-              .map((skill) => (
-                <span
-                  key={skill.id}
-                  className="rounded-full border px-2 py-0.5 text-[11px]"
-                >
-                  {skill.name}
-                </span>
-              ))}
-          </div>
+          <ResumeDraftEvidenceEditor
+            item={item}
+            onChange={(nextItem) =>
+              onChange({
+                ...draft,
+                items: draft.items.map((current) =>
+                  current.id === item.id ? nextItem : current,
+                ),
+              })
+            }
+          />
         </article>
       ))}
     </section>
@@ -708,59 +906,31 @@ function StandaloneSection({
   onChange: (draft: ResumeImportDraft) => void;
 }) {
   const [skillName, setSkillName] = useState("");
+  const selectedIds = new Set(draft.selectedStandaloneSkillIds);
+  const directSkills = draft.standaloneSkills.filter(isDirectDraftSkill);
 
-  if (draft.standaloneSkills.length === 0 && !skillName) {
-    return (
-      <section className="space-y-2">
-        <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-          Standalone skills
-        </h3>
-        <div className="flex gap-2">
-          <Input
-            value={skillName}
-            placeholder="Add a listed skill"
-            onChange={(event) => setSkillName(event.target.value)}
-          />
-          <Button
-            variant="outline"
-            onClick={() => {
-              if (!skillName.trim()) {
-                return;
-              }
+  const addSkill = () => {
+    const created = createManualDraftSkill(skillName);
 
-              const next = addSelfReportedSkills(
-                {
-                  id: "draft",
-                  name: "Draft",
-                  courses: [],
-                  experiences: [],
-                  skills: [],
-                },
-                [skillName],
-              ).skills.filter((skill) => skill.selfReported);
+    if (!created) {
+      return;
+    }
 
-              onChange({
-                ...draft,
-                standaloneSkills: [
-                  ...draft.standaloneSkills,
-                  ...next.map((skill) => ({
-                    id: skill.id,
-                    name: skill.name,
-                    confidence: 0,
-                    evidence: "Added during review",
-                    provenance: "direct" as const,
-                  })),
-                ],
-              });
-              setSkillName("");
-            }}
-          >
-            Add skill
-          </Button>
-        </div>
-      </section>
+    const alreadyListed = draft.standaloneSkills.some(
+      (skill) => skill.id === created.id,
     );
-  }
+
+    onChange({
+      ...draft,
+      standaloneSkills: alreadyListed
+        ? draft.standaloneSkills
+        : [...draft.standaloneSkills, created],
+      selectedStandaloneSkillIds: Array.from(
+        new Set([...draft.selectedStandaloneSkillIds, created.id]),
+      ),
+    });
+    setSkillName("");
+  };
 
   return (
     <section className="space-y-3">
@@ -768,27 +938,68 @@ function StandaloneSection({
         Also listed on your resume
       </h3>
       <p className="text-sm text-muted-foreground">
-        These were listed as skills, but MOVa couldn&apos;t connect them to a
-        specific experience.
+        These were listed as skills, but Mova couldn&apos;t connect them to a
+        specific experience. Selected skills are added as developing
+        self-reported roots.
       </p>
-      <div className="flex flex-wrap gap-2">
-        {draft.standaloneSkills.map((skill) => (
-          <button
+      <div className="space-y-2">
+        {directSkills.map((skill) => (
+          <div
             key={skill.id}
-            type="button"
-            className="rounded-full border px-3 py-1 text-xs hover:border-destructive hover:text-destructive"
-            onClick={() =>
-              onChange({
-                ...draft,
-                standaloneSkills: draft.standaloneSkills.filter(
-                  (current) => current.id !== skill.id,
-                ),
-              })
-            }
+            className="flex items-center gap-2 rounded-xl border px-3 py-2 text-sm"
           >
-            {skill.name} · Keep as developing
-          </button>
+            <input
+              type="checkbox"
+              checked={selectedIds.has(skill.id)}
+              aria-label={`Keep ${skill.name} as developing`}
+              onChange={(event) =>
+                onChange({
+                  ...draft,
+                  selectedStandaloneSkillIds: event.target.checked
+                    ? Array.from(
+                        new Set([
+                          ...draft.selectedStandaloneSkillIds,
+                          skill.id,
+                        ]),
+                      )
+                    : draft.selectedStandaloneSkillIds.filter(
+                        (id) => id !== skill.id,
+                      ),
+                })
+              }
+            />
+            <span className="min-w-0 flex-1 font-medium">{skill.name}</span>
+            <span className="text-xs text-muted-foreground">Developing</span>
+            <button
+              type="button"
+              className="text-xs text-muted-foreground hover:text-destructive"
+              onClick={() =>
+                onChange({
+                  ...draft,
+                  standaloneSkills: draft.standaloneSkills.filter(
+                    (current) => current.id !== skill.id,
+                  ),
+                  selectedStandaloneSkillIds:
+                    draft.selectedStandaloneSkillIds.filter(
+                      (id) => id !== skill.id,
+                    ),
+                })
+              }
+            >
+              Remove
+            </button>
+          </div>
         ))}
+      </div>
+      <div className="flex gap-2">
+        <Input
+          value={skillName}
+          placeholder="Add a listed skill"
+          onChange={(event) => setSkillName(event.target.value)}
+        />
+        <Button variant="outline" onClick={addSkill}>
+          Add skill
+        </Button>
       </div>
     </section>
   );

@@ -124,6 +124,26 @@ describe("workspaceSnapshotSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  it("rejects YYYY-MM dates with an invalid month", () => {
+    const result = workspaceSnapshotSchema.safeParse({
+      ...validSnapshot,
+      profile: {
+        ...validSnapshot.profile,
+        experiences: [
+          {
+            id: "experience-1",
+            title: "Software Intern",
+            status: "completed",
+            skillIds: ["react"],
+            startDate: "2026-99",
+          },
+        ],
+      },
+    });
+
+    expect(result.success).toBe(false);
+  });
+
   it("rejects invalid course progress", () => {
     const result = workspaceSnapshotSchema.safeParse({
       ...validSnapshot,

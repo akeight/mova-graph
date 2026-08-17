@@ -60,4 +60,16 @@ describe("inferResumeItemStatus", () => {
       }),
     ).toBe("completed");
   });
+
+  it("treats isCurrent as in-progress even when an end date exists", () => {
+    expect(
+      inferResumeItemStatus({
+        kind: "work",
+        startDate: "2026-05",
+        endDate: "2026-08",
+        isCurrent: true,
+        sourceExcerpt: "Software Engineering Intern, Acme, May 2026 – August 2026.",
+      }),
+    ).toBe("in-progress");
+  });
 });

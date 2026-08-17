@@ -3,6 +3,10 @@ import { describe, expect, it } from "vitest";
 import type { ResumeDraftItem, ResumeImportDraft } from
   "../types/resume-import";
 
+import { applyResumeDraftToProfile } from
+  "./apply-resume-draft-to-profile";
+import { mergeResumeDraftItems } from
+  "./merge-resume-draft-items";
 import { applyDuplicateDecision, mergeResumeDrafts } from
   "./merge-resume-drafts";
 
@@ -23,6 +27,7 @@ function item(
     kind: "work",
     status: "completed",
     skills: [],
+    selectedSkillIds: [],
     sourceIds: ["a"],
     ...overrides,
   };
@@ -37,6 +42,7 @@ function draft(
     applyProposedName: false,
     items,
     standaloneSkills: [],
+    selectedStandaloneSkillIds: [],
     possibleDuplicates: [],
   };
 }
@@ -154,5 +160,169 @@ describe("mergeResumeDrafts", () => {
       expect(decided.items).toHaveLength(1);
       expect(decided.possibleDuplicates).toEqual([]);
     }
+  });
+
+  it("keeps existing-profile probable matches unlinked until merge", () => {
+    const existingProfile = {
+      id: "student-1",
+      name: "jordan",
+      courses: [],
+      experiences: [
+        {
+          id: "existing-catalyst",
+          title: "Catalyst",
+          status: "completed" as const,
+          skillIds: ["react"],
+          kind: "project" as const,
+        },
+      ],
+      skills: [
+        {
+          id: "react",
+          name: "React",
+          status: "demonstrated" as const,
+        },
+      ],
+    };
+
+    const merged = mergeResumeDrafts(
+      [
+        draft(
+          [
+            item({
+              id: "imported-catalyst",
+              kind: "project",
+              title: "Catalyst",
+              skills: [skill("typescript", "TypeScript")],
+              selectedSkillIds: ["typescript"],
+            }),
+          ],
+          "a",
+        ),
+      ],
+      existingProfile,
+    );
+
+    expect(merged.items[0]?.existingItemId).toBeUndefined();
+    expect(merged.possibleDuplicates).toHaveLength(1);
+
+    const keepSeparate = applyDuplicateDecision(
+      merged,
+      merged.possibleDuplicates[0]!.id,
+      "keep-separate",
+      existingProfile,
+    );
+    const mergedDecision = applyDuplicateDecision(
+      merged,
+      merged.possibleDuplicates[0]!.id,
+      "merge",
+      existingProfile,
+    );
+
+    expect(keepSeparate.items[0]?.existingItemId).toBeUndefined();
+    expect(mergedDecision.items[0]?.existingItemId).toBe("existing-catalyst");
+    expect(keepSeparate.items[0]?.existingItemId).not.toBe(
+      mergedDecision.items[0]?.existingItemId,
+    );
+
+    const keptProfile = applyResumeDraftToProfile(
+      existingProfile,
+      keepSeparate,
+      "later",
+    );
+    const mergedProfile = applyResumeDraftToProfile(
+      existingProfile,
+      mergedDecision,
+      "later",
+    );
+
+    expect(keptProfile.experiences).toHaveLength(2);
+    expect(mergedProfile.experiences).toHaveLength(1);
+    expect(mergedProfile.experiences[0]?.id).toBe("existing-catalyst");
+    expect(mergedProfile.experiences[0]?.skillIds).toEqual(
+      expect.arrayContaining(["react", "typescript"]),
+    );
+    expect(keptProfile.experiences.map((entry) => entry.id).sort()).not.toEqual(
+      mergedProfile.experiences.map((entry) => entry.id).sort(),
+    );
+  });
+
+  it("rewrites remaining duplicate candidates after a 3-source merge chain", () => {
+    const starting: ResumeImportDraft = {
+      ...draft(
+        [
+          item({ id: "a", title: "A", organization: "Acme" }),
+          item({ id: "b", title: "B", organization: "Acme" }),
+          item({ id: "c", title: "C", organization: "Acme" }),
+        ],
+        "a",
+      ),
+      possibleDuplicates: [
+        {
+          id: "dup-ab",
+          leftId: "a",
+          rightId: "b",
+          reason: "A and B may be the same",
+        },
+        {
+          id: "dup-bc",
+          leftId: "b",
+          rightId: "c",
+          reason: "B and C may be the same",
+        },
+      ],
+    };
+
+    const afterAB = applyDuplicateDecision(starting, "dup-ab", "merge");
+
+    expect(afterAB.items.map((entry) => entry.id).sort()).toEqual(["a", "c"]);
+    expect(afterAB.possibleDuplicates).toEqual([
+      expect.objectContaining({
+        leftId: "a",
+        rightId: "c",
+      }),
+    ]);
+  });
+
+  it("keeps the higher-confidence direct skill when merging", () => {
+    const merged = mergeResumeDraftItems(
+      item({
+        id: "left",
+        title: "Software Engineering Intern",
+        organization: "Acme",
+        skills: [
+          {
+            id: "react",
+            name: "React",
+            confidence: 0.7,
+            evidence: "React",
+            provenance: "direct",
+          },
+        ],
+        selectedSkillIds: [],
+      }),
+      item({
+        id: "right",
+        title: "Software Engineering Intern",
+        organization: "Acme",
+        skills: [
+          {
+            id: "react",
+            name: "React",
+            confidence: 0.92,
+            evidence: "React",
+            provenance: "direct",
+          },
+        ],
+        selectedSkillIds: ["react"],
+      }),
+    );
+
+    expect(merged.skills[0]).toMatchObject({
+      id: "react",
+      confidence: 0.92,
+      provenance: "direct",
+    });
+    expect(merged.selectedSkillIds).toEqual(["react"]);
   });
 });

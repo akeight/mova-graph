@@ -173,6 +173,21 @@ export function SkillManagementPanel({
     }
   };
 
+  const unlistSelfReport = (
+    skillId: string,
+  ) => {
+    onChange(
+      removeSelfReportedSkill(
+        profile,
+        skillId,
+      ),
+    );
+
+    if (editingSkillId === skillId) {
+      cancelEditing();
+    }
+  };
+
   return (
     <section className="space-y-3 border-t pt-5">
       <div>
@@ -390,6 +405,18 @@ export function SkillManagementPanel({
               </div>
 
               <div className="flex shrink-0 items-center gap-1">
+                {skill.selfReported &&
+                skill.sources.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      unlistSelfReport(skill.id)
+                    }
+                    className="rounded-md px-2 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                  >
+                    Remove listed by you
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   onClick={() =>

@@ -27,6 +27,8 @@ import {
 } from "./ground-resume-extraction";
 import { inferResumeItemStatus } from
   "./infer-resume-item-status";
+import { selectedDirectSkillIds } from
+  "./resume-draft-skills";
 
 export type RawResumeGenerator = (
   input: ResumeExtractInput,
@@ -102,18 +104,27 @@ export function normalizeRawResumeExtraction(
   resumeText: string,
 ): ResumeImportDraft {
   const itemCount = raw.items.length;
+  const hasSkillsSection = Boolean(raw.skillsSectionExcerpt?.trim());
   const items: ResumeDraftItem[] = [];
 
   for (const item of raw.items) {
     const excerptOk = isItemExcerptAcceptable(
       item.sourceExcerpt,
       resumeText,
-      itemCount,
+      {
+        itemCount,
+        hasSkillsSection,
+      },
     );
 
-    const skills = excerptOk
-      ? normalizeExtractedSkills(item.skills, item.sourceExcerpt)
-      : [];
+    if (!excerptOk) {
+      continue;
+    }
+
+    const skills = normalizeExtractedSkills(
+      item.skills,
+      item.sourceExcerpt,
+    );
 
     items.push({
       id: createDraftItemId(),
@@ -125,6 +136,7 @@ export function normalizeRawResumeExtraction(
       description: item.description?.trim() || undefined,
       status: inferResumeItemStatus(item),
       skills,
+      selectedSkillIds: selectedDirectSkillIds(skills),
       sourceIds: [sourceId],
     });
   }
@@ -150,6 +162,7 @@ export function normalizeRawResumeExtraction(
     applyProposedName: false,
     items,
     standaloneSkills,
+    selectedStandaloneSkillIds: selectedDirectSkillIds(standaloneSkills),
     possibleDuplicates: [],
   };
 }
