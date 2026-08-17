@@ -20,6 +20,26 @@ export const profileItemExtractionInputSchema =
       ),
   });
 
+export const rawEvidenceMappingSchema =
+  z.object({
+    canonicalSkillId: z
+      .string()
+      .trim()
+      .min(1)
+      .max(80)
+      .describe(
+        "A MOVa evidence catalog ID supported by this source phrase.",
+      ),
+
+    confidence: z
+      .number()
+      .min(0)
+      .max(1)
+      .describe(
+        "How strongly the source supports this evidence. Not mapping certainty or proficiency.",
+      ),
+  });
+
 export const rawProfileItemExtractionSchema =
   z.object({
     title: z
@@ -43,21 +63,13 @@ export const rawProfileItemExtractionSchema =
     skills: z
       .array(
         z.object({
-          name: z
+          sourcePhrase: z
             .string()
             .trim()
             .min(1)
-            .max(60)
+            .max(120)
             .describe(
-              "A concise canonical skill name.",
-            ),
-
-          confidence: z
-            .number()
-            .min(0)
-            .max(1)
-            .describe(
-              "Confidence that the supplied text provides evidence for this skill.",
+              "A short phrase copied from the student source. Must be grounded in that source.",
             ),
 
           evidence: z
@@ -66,11 +78,17 @@ export const rawProfileItemExtractionSchema =
             .min(1)
             .max(200)
             .describe(
-              "A short explanation of what in the text supports this skill.",
+              "What in the source supports these mappings. Must stay grounded in student text.",
+            ),
+
+          mappings: z
+            .array(rawEvidenceMappingSchema)
+            .max(8)
+            .describe(
+              "Canonical catalog mappings. May be empty when the phrase is unknown evidence.",
             ),
         }),
       )
-      .min(1)
       .max(8),
   });
 

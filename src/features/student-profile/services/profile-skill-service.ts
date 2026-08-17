@@ -10,8 +10,16 @@ import type {
     getSkillContributionStatus,
   } from "../utils/profile-item-status";
   
-  import { reconcileProfileSkills } from
-    "../utils/reconcile-profile-skills";
+import { reconcileProfileSkills } from
+  "../utils/reconcile-profile-skills";
+
+import {
+  getEvidenceSkillName,
+} from "@/features/goals/data/evidence-skills";
+
+import {
+  normalizeEvidenceNames,
+} from "@/features/goals/services/normalize-evidence";
   
   export type ManagedSkillStatus =
     | StudentSkill["status"]
@@ -31,29 +39,6 @@ import type {
     status: ManagedSkillStatus;
     sources: SkillEvidenceSource[];
   };
-  
-  function createSkillId(
-    name: string,
-  ): string {
-    return name
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "");
-  }
-  
-  function humanizeSkillId(
-    skillId: string,
-  ): string {
-    return skillId
-      .split("-")
-      .map(
-        (word) =>
-          word.charAt(0).toUpperCase() +
-          word.slice(1),
-      )
-      .join(" ");
-  }
   
   function determineSkillStatus(
     sources: SkillEvidenceSource[],
@@ -185,7 +170,7 @@ import type {
   
           name:
             existingSkill?.name ??
-            humanizeSkillId(skillId),
+            getEvidenceSkillName(skillId),
   
           status:
             determineSkillStatus(
@@ -203,20 +188,33 @@ import type {
       );
   }
   
-  function replaceSkillId(
+  function replaceSkillIdWithExpanded(
     skillIds: string[],
     currentSkillId: string,
-    nextSkillId: string,
+    expandedIds: string[],
   ): string[] {
-    return Array.from(
-      new Set(
-        skillIds.map((skillId) =>
-          skillId === currentSkillId
-            ? nextSkillId
-            : skillId,
-        ),
-      ),
-    );
+    if (!skillIds.includes(currentSkillId)) {
+      return skillIds;
+    }
+
+    const nextIds: string[] = [];
+    const seen = new Set<string>();
+
+    for (const skillId of skillIds) {
+      const replacements =
+        skillId === currentSkillId
+          ? expandedIds
+          : [skillId];
+
+      for (const replacement of replacements) {
+        if (!seen.has(replacement)) {
+          seen.add(replacement);
+          nextIds.push(replacement);
+        }
+      }
+    }
+
+    return nextIds;
   }
   
   function mergeSkillStatus(
@@ -251,9 +249,22 @@ import type {
       );
     }
   
-    const nextSkillId =
-      createSkillId(normalizedName);
-  
+    const normalizedSkills =
+      normalizeEvidenceNames([
+        normalizedName,
+      ]);
+
+    if (normalizedSkills.length === 0) {
+      throw new Error(
+        "The skill name could not be converted into a valid identifier.",
+      );
+    }
+
+    const expandedIds = normalizedSkills.map(
+      (skill) => skill.id,
+    );
+    const nextSkillId = expandedIds[0];
+
     if (!nextSkillId) {
       throw new Error(
         "The skill name could not be converted into a valid identifier.",
@@ -289,53 +300,68 @@ import type {
     const updatedCourses =
       profile.courses.map((course) => ({
         ...course,
-  
-        skillIds: replaceSkillId(
+
+        skillIds: replaceSkillIdWithExpanded(
           course.skillIds,
           skillId,
-          nextSkillId,
+          expandedIds,
         ),
       }));
-  
+
     const updatedExperiences =
       profile.experiences.map(
         (experience) => ({
           ...experience,
-  
-          skillIds: replaceSkillId(
+
+          skillIds: replaceSkillIdWithExpanded(
             experience.skillIds,
             skillId,
-            nextSkillId,
+            expandedIds,
           ),
         }),
       );
-  
+
     const remainingSkills =
       profile.skills.filter(
         (skill) =>
-          skill.id !== skillId &&
-          skill.id !== nextSkillId,
+          !expandedIds.includes(skill.id) &&
+          skill.id !== skillId,
       );
-  
+
     const shouldKeepMetadata =
       currentSkill !== undefined ||
-      targetSkill !== undefined;
-  
+      targetSkill !== undefined ||
+      normalizedSkills.length > 0;
+
     const updatedSkills =
       shouldKeepMetadata
         ? [
             ...remainingSkills,
-  
-            {
-              id: nextSkillId,
-              name: normalizedName,
-  
-              status:
-                mergeSkillStatus(
-                  currentSkill?.status,
-                  targetSkill?.status,
-                ),
-            },
+
+            ...normalizedSkills.map(
+              (skill) => {
+                const existing =
+                  skill.id === nextSkillId
+                    ? targetSkill ?? currentSkill
+                    : profile.skills.find(
+                        (current) =>
+                          current.id === skill.id,
+                      );
+
+                return {
+                  id: skill.id,
+                  name: skill.name,
+                  status: mergeSkillStatus(
+                    skill.id === nextSkillId
+                      ? currentSkill?.status
+                      : existing?.status,
+                    skill.id === nextSkillId
+                      ? targetSkill?.status
+                      : existing?.status,
+                  ),
+                };
+              },
+            ),
           ]
         : remainingSkills;
   

@@ -3,6 +3,14 @@ import type {
   ExperienceProgress,
 } from "@/features/student-profile/types/student-profile";
 
+import type { EvidenceCategory } from
+  "@/features/goals/types/evidence-skill";
+
+import type {
+  EvidenceNormalizationMethod,
+  EvidenceProvenance,
+} from "@/features/goals/types/normalized-evidence";
+
 export type ProfileItemKind =
   | "course"
   | "experience";
@@ -15,8 +23,13 @@ export type ProfileItemExtractionInput = {
 export type ExtractedSkill = {
   id: string;
   name: string;
+  sourcePhrase?: string;
   confidence: number;
   evidence: string;
+  normalizationMethod?: EvidenceNormalizationMethod;
+  provenance?: EvidenceProvenance;
+  derivedFromSkillId?: string;
+  category?: EvidenceCategory;
 };
 
 export type ProfileItemExtraction = {

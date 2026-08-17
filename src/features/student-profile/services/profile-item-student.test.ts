@@ -77,6 +77,7 @@ import {
         skillIds: [
           "typescript",
           "react",
+          "frontend-development",
         ],
       });
   
@@ -105,6 +106,25 @@ import {
       ).toBe(false);
     });
   
+    it("canonicalizes aliases and expands implications", () => {
+      const result =
+        updateProfileItem(profile, {
+          kind: "course",
+          itemId: "course-1",
+          title: "Web Development",
+          status: "completed",
+          skillNames: [
+            "Postgres",
+            "PostgreSQL",
+          ],
+        });
+
+      expect(result.courses[0].skillIds).toEqual([
+        "postgresql",
+        "database-development",
+      ]);
+    });
+
     it("keeps a dropped item in profile history", () => {
       const result =
         updateProfileItem(profile, {

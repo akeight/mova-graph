@@ -69,6 +69,7 @@ import {
             skillIds: [
               "typescript",
               "react",
+              "frontend-development",
             ],
           },
         ]);
@@ -82,6 +83,11 @@ import {
           {
             id: "react",
             name: "React",
+            status: "demonstrated",
+          },
+          {
+            id: "frontend-development",
+            name: "Frontend Development",
             status: "demonstrated",
           },
         ]);

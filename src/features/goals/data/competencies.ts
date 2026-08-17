@@ -128,7 +128,12 @@ export const careerCompetencies = [
       groups: [
         {
           id: "cloud",
-          skillIds: ["aws"],
+          skillIds: [
+            "cloud-platform",
+            "aws",
+            "azure",
+            "gcp",
+          ],
         },
       ],
     },

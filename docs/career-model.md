@@ -24,6 +24,8 @@ Those belong to a later Opportunity Fit model.
 
 The evidence registry holds both **concrete technologies** (React, PostgreSQL, Swift) and **broader demonstrated capabilities** (frontend-development, backend-development, ios-development). Either kind of signal can support a competency. One matching skill can satisfy an evidence group; multi-group competencies require the configured number of groups.
 
+Student language is mapped into this registry by [evidence normalization](./evidence-normalization.md). **MOVa uses AI to interpret evidence, not to assign readiness.**
+
 ## Language
 
 - **Core** — foundational for this career type

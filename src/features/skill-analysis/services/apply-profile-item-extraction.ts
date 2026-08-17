@@ -3,13 +3,17 @@ import type {
     StudentSkill,
   } from "@/features/student-profile/types/student-profile";
   
-  import { reconcileProfileSkills } from
-    "@/features/student-profile/utils/reconcile-profile-skills";
-  
-  import type {
-    ApprovedProfileItem,
-    ExtractedSkill,
-  } from "../types/profile-item-extraction";
+import { reconcileProfileSkills } from
+  "@/features/student-profile/utils/reconcile-profile-skills";
+
+import type {
+  ApprovedProfileItem,
+  ExtractedSkill,
+} from "../types/profile-item-extraction";
+
+import {
+  expandApprovedEvidence,
+} from "./normalize-extraction";
   
   export type ProfileItemIdFactory = (
     prefix: string,
@@ -82,7 +86,9 @@ import type {
     }
   
     const approvedSkills =
-      normalizeApprovedSkills(item.skills);
+      expandApprovedEvidence(
+        normalizeApprovedSkills(item.skills),
+      );
   
     if (approvedSkills.length === 0) {
       throw new Error(
