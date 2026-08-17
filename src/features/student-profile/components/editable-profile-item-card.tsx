@@ -19,6 +19,12 @@ import type {
   StudentExperience,
 } from "../types/student-profile";
 
+import {
+  PROFILE_ITEM_DATE_PATTERN,
+  PROFILE_ITEM_DESCRIPTION_MAX,
+  PROFILE_ORGANIZATION_MAX,
+} from "../constants";
+
 type EditableItem =
   | StudentCourse
   | StudentExperience;
@@ -32,6 +38,9 @@ export type ProfileItemDraft = {
   description?: string;
   status: EditableProgress;
   skillNames: string[];
+  organization?: string;
+  startDate?: string;
+  endDate?: string;
 };
 
 type EditableProfileItemCardProps = {
@@ -55,6 +64,45 @@ const statusLabels: Record<
   planned: "Planned",
   dropped: "Dropped",
 };
+
+function isDateDraftInput(value: string): boolean {
+  return value === "" || /^\d{0,4}(-\d{0,2})?$/.test(value);
+}
+
+function activityTypeLabel(
+  kind: "course" | "experience",
+  item: EditableItem,
+): string {
+  if (kind === "course") {
+    return "kind" in item && item.kind === "certification"
+      ? "Certification"
+      : "Course";
+  }
+
+  if (!("kind" in item) || !item.kind) {
+    return "Experience";
+  }
+
+  switch (item.kind) {
+    case "project":
+      return "Project";
+    case "volunteer":
+      return "Volunteer";
+    case "leadership":
+      return "Leadership";
+    case "work":
+      return "Work";
+    default:
+      return "Experience";
+  }
+}
+
+function isExperienceItem(
+  kind: "course" | "experience",
+  item: EditableItem,
+): item is StudentExperience {
+  return kind === "experience" && Boolean(item.id);
+}
 
 export function EditableProfileItemCard({
   kind,
@@ -80,6 +128,17 @@ export function EditableProfileItemCard({
   const [skillsText, setSkillsText] =
     useState(skillNames.join(", "));
 
+  const experience = isExperienceItem(kind, item);
+
+  const [organization, setOrganization] =
+    useState(experience ? item.organization ?? "" : "");
+
+  const [startDate, setStartDate] =
+    useState(experience ? item.startDate ?? "" : "");
+
+  const [endDate, setEndDate] =
+    useState(experience ? item.endDate ?? "" : "");
+
   const resetDraft = () => {
     setTitle(item.title);
     setDescription(
@@ -88,6 +147,21 @@ export function EditableProfileItemCard({
     setStatus(item.status);
     setSkillsText(
       skillNames.join(", "),
+    );
+    setOrganization(
+      isExperienceItem(kind, item)
+        ? item.organization ?? ""
+        : "",
+    );
+    setStartDate(
+      isExperienceItem(kind, item)
+        ? item.startDate ?? ""
+        : "",
+    );
+    setEndDate(
+      isExperienceItem(kind, item)
+        ? item.endDate ?? ""
+        : "",
     );
   };
 
@@ -108,9 +182,15 @@ export function EditableProfileItemCard({
         .map((skill) => skill.trim())
         .filter(Boolean);
 
+    const datesValid =
+      kind !== "experience" ||
+      ((!startDate || PROFILE_ITEM_DATE_PATTERN.test(startDate)) &&
+        (!endDate || PROFILE_ITEM_DATE_PATTERN.test(endDate)));
+
     if (
       !title.trim() ||
-      nextSkillNames.length === 0
+      nextSkillNames.length === 0 ||
+      !datesValid
     ) {
       return;
     }
@@ -124,6 +204,13 @@ export function EditableProfileItemCard({
 
       status,
       skillNames: nextSkillNames,
+      ...(kind === "experience"
+        ? {
+            organization: organization.trim(),
+            startDate: startDate.trim(),
+            endDate: endDate.trim(),
+          }
+        : {}),
     });
 
     setIsEditing(false);
@@ -145,7 +232,7 @@ export function EditableProfileItemCard({
       <article className="space-y-3 rounded-xl border border-primary/40 bg-primary/8 p-3">
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
-            Editing {kind}
+            Editing {activityTypeLabel(kind, item).toLowerCase()}
           </p>
 
           <button
@@ -178,6 +265,68 @@ export function EditableProfileItemCard({
           />
         </label>
 
+        {kind === "experience" ? (
+          <>
+            <label className="block space-y-1.5">
+              <span className="text-xs font-medium">
+                Organization
+              </span>
+
+              <input
+                value={organization}
+                onChange={(event) =>
+                  setOrganization(event.target.value)
+                }
+                maxLength={PROFILE_ORGANIZATION_MAX}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              />
+            </label>
+
+            <div className="grid gap-2 sm:grid-cols-2">
+              <label className="block space-y-1.5">
+                <span className="text-xs font-medium">
+                  Start
+                </span>
+                <input
+                  value={startDate}
+                  placeholder="YYYY or YYYY-MM"
+                  onChange={(event) => {
+                    const value = event.target.value;
+
+                    if (isDateDraftInput(value)) {
+                      setStartDate(value);
+                    }
+                  }}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                />
+              </label>
+              <label className="block space-y-1.5">
+                <span className="text-xs font-medium">
+                  End
+                </span>
+                <input
+                  value={endDate}
+                  placeholder="YYYY or YYYY-MM"
+                  onChange={(event) => {
+                    const value = event.target.value;
+
+                    if (isDateDraftInput(value)) {
+                      setEndDate(value);
+                    }
+                  }}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                />
+              </label>
+            </div>
+            {(startDate && !PROFILE_ITEM_DATE_PATTERN.test(startDate)) ||
+            (endDate && !PROFILE_ITEM_DATE_PATTERN.test(endDate)) ? (
+              <p className="text-xs text-destructive">
+                Use YYYY or YYYY-MM, with months 01–12.
+              </p>
+            ) : null}
+          </>
+        ) : null}
+
         <label className="block space-y-1.5">
           <span className="text-xs font-medium">
             Description
@@ -191,7 +340,7 @@ export function EditableProfileItemCard({
               )
             }
             rows={3}
-            maxLength={500}
+            maxLength={PROFILE_ITEM_DESCRIPTION_MAX}
             className="w-full resize-y rounded-md border bg-background px-3 py-2 text-sm"
           />
         </label>
@@ -252,7 +401,14 @@ export function EditableProfileItemCard({
             onClick={handleSave}
             disabled={
               !title.trim() ||
-              !skillsText.trim()
+              !skillsText.trim() ||
+              (kind === "experience" &&
+                Boolean(
+                  (startDate &&
+                    !PROFILE_ITEM_DATE_PATTERN.test(startDate)) ||
+                    (endDate &&
+                      !PROFILE_ITEM_DATE_PATTERN.test(endDate)),
+                ))
             }
             className="inline-flex flex-1 items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -303,11 +459,16 @@ export function EditableProfileItemCard({
           </div>
 
           <p className="mt-1 text-xs text-muted-foreground">
-            <span className="capitalize">
-              {kind}
-            </span>
+            {activityTypeLabel(kind, item)}
             {" · "}
             {statusLabels[item.status]}
+            {isExperienceItem(kind, item) && item.organization
+              ? ` · ${item.organization}`
+              : ""}
+            {isExperienceItem(kind, item) &&
+            (item.startDate || item.endDate)
+              ? ` · ${item.startDate ?? "?"}–${item.endDate ?? "Present"}`
+              : ""}
           </p>
 
           {item.description ? (

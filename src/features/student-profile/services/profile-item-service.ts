@@ -1,10 +1,14 @@
 import type {
   CourseProgress,
   ExperienceProgress,
+  StudentCourse,
+  StudentExperience,
   StudentProfile,
   StudentSkill,
 } from "../types/student-profile";
 
+import { PROFILE_ITEM_DATE_PATTERN } from
+  "../constants";
 import { reconcileProfileSkills } from
   "../utils/reconcile-profile-skills";
 
@@ -28,6 +32,7 @@ export type ProfileItemUpdate =
       description?: string;
       status: CourseProgress;
       skillNames: string[];
+      courseKind?: StudentCourse["kind"];
     }
   | {
       kind: "experience";
@@ -36,6 +41,10 @@ export type ProfileItemUpdate =
       description?: string;
       status: ExperienceProgress;
       skillNames: string[];
+      experienceKind?: StudentExperience["kind"];
+      organization?: string;
+      startDate?: string;
+      endDate?: string;
     };
 
 export function normalizeSkillNames(
@@ -70,6 +79,9 @@ function mergeSkillMetadata(
       status:
         existingSkill?.status ??
         "developing",
+      ...(existingSkill?.selfReported
+        ? { selfReported: true as const }
+        : {}),
     });
   }
 
@@ -94,6 +106,16 @@ export function getProfileItemSkillNames(
       skillMap.get(skillId) ??
       getEvidenceSkillName(skillId),
   );
+}
+
+function persistableDate(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+
+  if (!trimmed || !PROFILE_ITEM_DATE_PATTERN.test(trimmed)) {
+    return undefined;
+  }
+
+  return trimmed;
 }
 
 export function updateProfileItem(
@@ -161,6 +183,9 @@ export function updateProfileItem(
                     undefined,
                   status: update.status,
                   skillIds,
+                  kind:
+                    update.courseKind ??
+                    course.kind,
                 }
               : course,
         ),
@@ -197,6 +222,21 @@ export function updateProfileItem(
                   undefined,
                 status: update.status,
                 skillIds,
+                kind:
+                  update.experienceKind ??
+                  experience.kind,
+                organization:
+                  update.organization !== undefined
+                    ? update.organization.trim() || undefined
+                    : experience.organization,
+                startDate:
+                  update.startDate !== undefined
+                    ? persistableDate(update.startDate)
+                    : experience.startDate,
+                endDate:
+                  update.endDate !== undefined
+                    ? persistableDate(update.endDate)
+                    : experience.endDate,
               }
             : experience,
       ),

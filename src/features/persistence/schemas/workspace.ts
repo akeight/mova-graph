@@ -4,6 +4,15 @@ import { careerRoles } from
   "@/features/goals/data/career-roles";
 import { ONBOARDING_STEPS } from
   "@/features/onboarding/types/onboarding";
+import {
+  PROFILE_INSTITUTION_MAX,
+  PROFILE_ITEM_DATE_PATTERN,
+  PROFILE_ITEM_DESCRIPTION_MAX,
+  PROFILE_NAME_MAX,
+  PROFILE_ORGANIZATION_MAX,
+  PROFILE_PROGRAM_MAX,
+  PROFILE_TITLE_MAX,
+} from "@/features/student-profile/constants";
 
   const courseProgressSchema = z.enum([
     "planned",
@@ -24,13 +33,18 @@ const skillProgressSchema = z.enum([
   "developing",
 ]);
 
+const profileItemDateSchema = z
+  .string()
+  .trim()
+  .regex(PROFILE_ITEM_DATE_PATTERN);
+
 const studentCourseSchema = z.object({
   id: z.string().trim().min(1),
-  title: z.string().trim().min(1).max(120),
+  title: z.string().trim().min(1).max(PROFILE_TITLE_MAX),
   description: z
     .string()
     .trim()
-    .max(500)
+    .max(PROFILE_ITEM_DESCRIPTION_MAX)
     .optional(),
 
   status: courseProgressSchema,
@@ -38,15 +52,17 @@ const studentCourseSchema = z.object({
   skillIds: z.array(
     z.string().trim().min(1),
   ),
+
+  kind: z.enum(["course", "certification"]).optional(),
 });
 
 const studentExperienceSchema = z.object({
   id: z.string().trim().min(1),
-  title: z.string().trim().min(1).max(120),
+  title: z.string().trim().min(1).max(PROFILE_TITLE_MAX),
   description: z
     .string()
     .trim()
-    .max(500)
+    .max(PROFILE_ITEM_DESCRIPTION_MAX)
     .optional(),
 
   status: experienceProgressSchema,
@@ -54,23 +70,49 @@ const studentExperienceSchema = z.object({
   skillIds: z.array(
     z.string().trim().min(1),
   ),
+
+  kind: z
+    .enum([
+      "work",
+      "project",
+      "volunteer",
+      "leadership",
+      "other",
+    ])
+    .optional(),
+
+  organization: z
+    .string()
+    .trim()
+    .max(PROFILE_ORGANIZATION_MAX)
+    .optional(),
+
+  startDate: profileItemDateSchema.optional(),
+  endDate: profileItemDateSchema.optional(),
 });
 
 const studentSkillSchema = z.object({
   id: z.string().trim().min(1),
   name: z.string().trim().min(1).max(80),
   status: skillProgressSchema,
+  selfReported: z.boolean().optional(),
 });
 
 export const studentProfileSchema =
   z.object({
     id: z.string().trim().min(1),
-    name: z.string().trim().min(1).max(120),
+    name: z.string().trim().min(1).max(PROFILE_NAME_MAX),
 
     program: z
       .string()
       .trim()
-      .max(160)
+      .max(PROFILE_PROGRAM_MAX)
+      .optional(),
+
+    institution: z
+      .string()
+      .trim()
+      .max(PROFILE_INSTITUTION_MAX)
       .optional(),
 
     courses: z.array(
@@ -132,7 +174,7 @@ export const workspaceSnapshotSchema =
 
 const defaultOnboarding = {
   completed: false,
-  step: "career-goal" as const,
+  step: "build-profile" as const,
 };
 
 /**

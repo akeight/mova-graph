@@ -52,6 +52,10 @@ import {
           status === "demonstrated"
             ? "demonstrated"
             : "developing",
+
+        ...(existingSkill?.selfReported
+          ? { selfReported: true as const }
+          : {}),
       });
     }
   

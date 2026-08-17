@@ -8,20 +8,20 @@ import {
 } from "./onboarding-state";
 
 describe("onboarding-state", () => {
-  it("starts incomplete at the career-goal step", () => {
+  it("starts incomplete at the build-profile step", () => {
     expect(initialOnboarding()).toEqual({
       completed: false,
-      step: "career-goal",
+      step: "build-profile",
     });
   });
 
   it("advances forward through steps", () => {
     const advanced = advanceOnboarding(
       initialOnboarding(),
-      "build-profile",
+      "career-goal",
     );
 
-    expect(advanced.step).toBe("build-profile");
+    expect(advanced.step).toBe("career-goal");
     expect(advanced.completed).toBe(false);
   });
 

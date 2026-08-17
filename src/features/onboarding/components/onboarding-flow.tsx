@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   ArrowRight,
   CircleAlert,
+  CircleCheck,
   CircleDashed,
   Lightbulb,
   PartyPopper,
@@ -27,10 +28,18 @@ import { ProfileExtractionReview } from
   "@/features/skill-analysis/components/profile-extraction-review";
 import type { ApprovedProfileItem } from
   "@/features/skill-analysis/types/profile-item-extraction";
+import { ResumeImportWizard } from
+  "@/features/resume-import/components/resume-import-wizard";
+import { ResumeMissingCheckpoint } from
+  "@/features/resume-import/components/resume-missing-checkpoint";
+import { ResumeStartChoice } from
+  "@/features/resume-import/components/resume-start-choice";
 import { StudentProfileForm } from
   "@/features/student-profile/components/student-profile-form";
 import type { StudentProfile } from
   "@/features/student-profile/types/student-profile";
+import { hasProfileEvidence } from
+  "../services/resume-onboarding-step";
 
 import type { OnboardingStep } from "../types/onboarding";
 import { OnboardingProgress } from "./onboarding-progress";
@@ -57,7 +66,7 @@ type InteractiveStep = Exclude<OnboardingStep, "account">;
 function toInteractiveStep(
   step: OnboardingStep,
 ): InteractiveStep {
-  return step === "account" ? "career-goal" : step;
+  return step === "account" ? "build-profile" : step;
 }
 
 export function OnboardingFlow({
@@ -80,6 +89,11 @@ export function OnboardingFlow({
     useState<InteractiveStep>(() =>
       toInteractiveStep(currentStep),
     );
+
+  const [startPath, setStartPath] = useState<
+    "choice" | "import" | "manual"
+  >(() => (hasProfileEvidence(profile) ? "manual" : "choice"));
+  const [showMissing, setShowMissing] = useState(false);
 
   const goTo = (step: InteractiveStep) => {
     setVisibleStep(step);
@@ -107,7 +121,7 @@ export function OnboardingFlow({
 
         {visibleStep === "career-goal" ? (
           <StepShell
-            title="Choose your target career"
+            title="Great — now where are you trying to go?"
             description="Pick the role you want to work towards. You can change this any time."
           >
             <CareerRoleSelector
@@ -117,7 +131,8 @@ export function OnboardingFlow({
             />
 
             <StepNav
-              onContinue={() => goTo("build-profile")}
+              onBack={() => goBack("build-profile")}
+              onContinue={() => goTo("review-path")}
             />
           </StepShell>
         ) : null}
@@ -125,22 +140,55 @@ export function OnboardingFlow({
         {visibleStep === "build-profile" ? (
           <StepShell
             title="Build your profile"
-            description="Add or review your experience, coursework, projects, and skills. Paste text to extract items automatically, or edit them directly."
+            description="Mova works best when it understands what you've already done."
           >
-            <ProfileExtractionReview
-              onAdd={onAddExtractedItem}
-            />
+            {startPath === "choice" ? (
+              <ResumeStartChoice
+                onImport={() => setStartPath("import")}
+                onManual={() => setStartPath("manual")}
+              />
+            ) : null}
 
-            <StudentProfileForm
-              profile={profile}
-              onChange={onProfileChange}
-              onRestoreDemo={onRestoreDemo}
-            />
+            {startPath === "import" ? (
+              <ResumeImportWizard
+                baselineProfile={profile}
+                mode="onboarding"
+                onApproved={(nextProfile) => {
+                  onProfileChange(nextProfile);
+                  goTo("career-goal");
+                }}
+                onCancel={() =>
+                  setStartPath(
+                    hasProfileEvidence(profile) ? "manual" : "choice",
+                  )
+                }
+              />
+            ) : null}
 
-            <StepNav
-              onBack={() => goBack("career-goal")}
-              onContinue={() => goTo("review-path")}
-            />
+            {startPath === "manual" ? (
+              <>
+                <ProfileExtractionReview
+                  onAdd={onAddExtractedItem}
+                />
+
+                <StudentProfileForm
+                  profile={profile}
+                  onChange={onProfileChange}
+                  onRestoreDemo={onRestoreDemo}
+                />
+
+                {showMissing ? (
+                  <ResumeMissingCheckpoint
+                    onAddSomething={() => setShowMissing(false)}
+                    onLooksRight={() => goTo("career-goal")}
+                  />
+                ) : (
+                  <StepNav
+                    onContinue={() => setShowMissing(true)}
+                  />
+                )}
+              </>
+            ) : null}
           </StepShell>
         ) : null}
 
@@ -156,7 +204,7 @@ export function OnboardingFlow({
             />
 
             <StepNav
-              onBack={() => goBack("build-profile")}
+              onBack={() => goBack("career-goal")}
               onContinue={() => goTo("finish")}
             />
           </StepShell>
@@ -286,12 +334,19 @@ function ReviewSummary({
 }: ReviewSummaryProps) {
   const topGaps = recommendations.slice(0, 3);
   const bestMove = recommendations[0] ?? null;
+  const strongestAreas = assessment.competencies
+    .filter((competency) => competency.evidenceStatus === "demonstrated")
+    .slice(0, 3);
 
   return (
     <div className="space-y-4">
       <section className="rounded-2xl border bg-card p-6 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-          Career readiness
+          Your starting point
+        </p>
+
+        <p className="mt-2 text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+          {role.title}
         </p>
 
         <div className="mt-2 flex items-baseline gap-3">
@@ -299,7 +354,7 @@ function ReviewSummary({
             {assessment.score}%
           </span>
           <span className="text-sm font-medium text-muted-foreground">
-            ready for {role.title}
+            readiness
           </span>
         </div>
 
@@ -317,9 +372,25 @@ function ReviewSummary({
         </div>
       </section>
 
+      {strongestAreas.length > 0 ? (
+        <section className="rounded-2xl border bg-card p-6 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            Strongest areas
+          </p>
+          <ul className="mt-3 space-y-2">
+            {strongestAreas.map((area) => (
+              <li key={area.competencyId} className="flex items-center gap-2 text-sm">
+                <CircleCheck className="h-4 w-4 text-success" aria-hidden="true" />
+                {area.competencyName}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       <section className="rounded-2xl border bg-card p-6 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-          Important gaps
+          Biggest opportunity
         </p>
 
         {topGaps.length > 0 ? (
@@ -370,7 +441,7 @@ function ReviewSummary({
 
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-              Highest-priority recommendation
+              Highest-impact next move
             </p>
 
             {bestMove ? (

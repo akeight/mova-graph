@@ -2,12 +2,12 @@
  * Ordered steps of the guided first-run experience.
  *
  * `account` is implicitly satisfied by an authenticated session, so the
- * interactive flow begins at `career-goal`. `finish` marks completion.
+ * interactive flow begins at `build-profile`. `finish` marks completion.
  */
 export const ONBOARDING_STEPS = [
   "account",
-  "career-goal",
   "build-profile",
+  "career-goal",
   "review-path",
   "finish",
 ] as const;
