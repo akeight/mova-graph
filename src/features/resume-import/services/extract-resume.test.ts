@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { normalizeRawResumeExtraction } from "./extract-resume";
+import type {
+  RawResumeExtraction,
+  RawResumeItem,
+} from "../schemas/resume-extraction";
+
+import {
+  extractResume,
+  normalizeRawResumeExtraction,
+  ResumeExtractionEmptyError,
+} from "./extract-resume";
 
 const resumeText = [
   "Jordan Lee",
@@ -13,18 +22,46 @@ const resumeText = [
   "Skills: AWS, Docker",
 ].join("\n");
 
+function item(
+  value: Pick<RawResumeItem, "kind" | "title" | "sourceExcerpt" | "skills"> &
+    Partial<RawResumeItem>,
+): RawResumeItem {
+  return {
+    organization: null,
+    startDate: null,
+    endDate: null,
+    isCurrent: null,
+    description: null,
+    ...value,
+  };
+}
+
+function extraction(
+  value: Pick<RawResumeExtraction, "items" | "standaloneSkills"> &
+    Partial<RawResumeExtraction>,
+): RawResumeExtraction {
+  return {
+    candidateName: null,
+    program: null,
+    institution: null,
+    skillsSectionExcerpt: null,
+    ...value,
+  };
+}
+
 describe("normalizeRawResumeExtraction", () => {
   it("rejects React evidence attached to the wrong activity", () => {
     const draft = normalizeRawResumeExtraction(
       "source-1",
       "swe.pdf",
-      {
+      extraction({
         items: [
-          {
+          item({
             kind: "work",
             title: "Software Engineering Intern",
             organization: "Itron",
-            sourceExcerpt: "Software Engineering Intern — Itron\nBuilt .NET MAUI features.",
+            sourceExcerpt:
+              "Software Engineering Intern — Itron\nBuilt .NET MAUI features.",
             skills: [
               {
                 sourcePhrase: "React",
@@ -41,8 +78,8 @@ describe("normalizeRawResumeExtraction", () => {
                 ],
               },
             ],
-          },
-          {
+          }),
+          item({
             kind: "project",
             title: "Catalyst",
             sourceExcerpt: "Catalyst\nBuilt a React dashboard.",
@@ -55,17 +92,17 @@ describe("normalizeRawResumeExtraction", () => {
                 ],
               },
             ],
-          },
+          }),
         ],
         standaloneSkills: [],
-      },
+      }),
       resumeText,
     );
 
     const itron = draft.items.find(
-      (item) => item.organization === "Itron",
+      (entry) => entry.organization === "Itron",
     );
-    const catalyst = draft.items.find((item) => item.title === "Catalyst");
+    const catalyst = draft.items.find((entry) => entry.title === "Catalyst");
 
     expect(itron?.skills.map((skill) => skill.id)).toContain("dotnet-maui");
     expect(itron?.skills.map((skill) => skill.id)).not.toContain("react");
@@ -78,9 +115,9 @@ describe("normalizeRawResumeExtraction", () => {
     const draft = normalizeRawResumeExtraction(
       "source-1",
       "swe.pdf",
-      {
+      extraction({
         items: [
-          {
+          item({
             kind: "work",
             title: "Itron",
             sourceExcerpt: longResume.slice(0, 2000),
@@ -93,8 +130,8 @@ describe("normalizeRawResumeExtraction", () => {
                 ],
               },
             ],
-          },
-          {
+          }),
+          item({
             kind: "project",
             title: "Catalyst",
             sourceExcerpt: "Catalyst\nBuilt a React dashboard.",
@@ -107,14 +144,14 @@ describe("normalizeRawResumeExtraction", () => {
                 ],
               },
             ],
-          },
+          }),
         ],
         standaloneSkills: [],
-      },
+      }),
       longResume,
     );
 
-    const itron = draft.items.find((item) => item.title === "Itron");
+    const itron = draft.items.find((entry) => entry.title === "Itron");
 
     expect(itron).toBeUndefined();
   });
@@ -123,15 +160,15 @@ describe("normalizeRawResumeExtraction", () => {
     const draft = normalizeRawResumeExtraction(
       "source-1",
       "swe.pdf",
-      {
+      extraction({
         skillsSectionExcerpt: "Skills: AWS, Docker",
         items: [
-          {
+          item({
             kind: "project",
             title: "Catalyst",
             sourceExcerpt: "Catalyst\nBuilt a React dashboard.",
             skills: [],
-          },
+          }),
         ],
         standaloneSkills: [
           {
@@ -145,7 +182,7 @@ describe("normalizeRawResumeExtraction", () => {
             mappings: [{ canonicalSkillId: "react", confidence: 0.9 }],
           },
         ],
-      },
+      }),
       resumeText,
     );
 
@@ -159,7 +196,7 @@ describe("normalizeRawResumeExtraction", () => {
     const draft = normalizeRawResumeExtraction(
       "source-1",
       "swe.pdf",
-      {
+      extraction({
         items: [],
         standaloneSkills: [
           {
@@ -168,7 +205,7 @@ describe("normalizeRawResumeExtraction", () => {
             mappings: [{ canonicalSkillId: "aws", confidence: 0.9 }],
           },
         ],
-      },
+      }),
       resumeText,
     );
 
@@ -181,15 +218,15 @@ describe("normalizeRawResumeExtraction", () => {
     const draft = normalizeRawResumeExtraction(
       "source-1",
       "swe.pdf",
-      {
+      extraction({
         skillsSectionExcerpt: longResume.slice(0, 1500),
         items: [
-          {
+          item({
             kind: "project",
             title: "Catalyst",
             sourceExcerpt: "Catalyst\nBuilt a React dashboard.",
             skills: [],
-          },
+          }),
         ],
         standaloneSkills: [
           {
@@ -198,7 +235,7 @@ describe("normalizeRawResumeExtraction", () => {
             mappings: [{ canonicalSkillId: "react", confidence: 0.9 }],
           },
         ],
-      },
+      }),
       longResume,
     );
 
@@ -224,9 +261,9 @@ describe("normalizeRawResumeExtraction", () => {
     const draft = normalizeRawResumeExtraction(
       "source-1",
       "swe.pdf",
-      {
+      extraction({
         items: [
-          {
+          item({
             kind: "project",
             title: "Catalyst",
             sourceExcerpt: catalystExcerpt,
@@ -244,14 +281,14 @@ describe("normalizeRawResumeExtraction", () => {
                 ],
               },
             ],
-          },
+          }),
         ],
         standaloneSkills: [],
-      },
+      }),
       catalystResume,
     );
 
-    const catalyst = draft.items.find((item) => item.title === "Catalyst");
+    const catalyst = draft.items.find((entry) => entry.title === "Catalyst");
 
     expect(catalyst?.selectedSkillIds).toContain("react");
     expect(catalyst?.selectedSkillIds).not.toContain("typescript");
@@ -273,10 +310,10 @@ describe("normalizeRawResumeExtraction", () => {
     const draft = normalizeRawResumeExtraction(
       "source-1",
       "swe.pdf",
-      {
+      extraction({
         skillsSectionExcerpt: "Skills: AWS",
         items: [
-          {
+          item({
             kind: "work",
             title: "Software Engineering Intern",
             organization: "Acme",
@@ -288,7 +325,7 @@ describe("normalizeRawResumeExtraction", () => {
                 mappings: [{ canonicalSkillId: "aws", confidence: 0.99 }],
               },
             ],
-          },
+          }),
         ],
         standaloneSkills: [
           {
@@ -297,7 +334,7 @@ describe("normalizeRawResumeExtraction", () => {
             mappings: [{ canonicalSkillId: "aws", confidence: 0.9 }],
           },
         ],
-      },
+      }),
       oneItemResume,
     );
 
@@ -317,9 +354,9 @@ describe("normalizeRawResumeExtraction", () => {
     const draft = normalizeRawResumeExtraction(
       "source-1",
       "swe.pdf",
-      {
+      extraction({
         items: [
-          {
+          item({
             kind: "work",
             title: "Software Engineering Intern",
             organization: "Acme",
@@ -331,7 +368,7 @@ describe("normalizeRawResumeExtraction", () => {
                 mappings: [{ canonicalSkillId: "aws", confidence: 0.99 }],
               },
             ],
-          },
+          }),
         ],
         standaloneSkills: [
           {
@@ -340,16 +377,103 @@ describe("normalizeRawResumeExtraction", () => {
             mappings: [{ canonicalSkillId: "aws", confidence: 0.9 }],
           },
         ],
-      },
+      }),
       mixedResume,
     );
 
     expect(draft.items).toHaveLength(0);
     expect(draft.standaloneSkills).toEqual([]);
     expect(
-      draft.items.some((item) =>
-        item.skills.some((skill) => skill.id === "aws"),
+      draft.items.some((entry) =>
+        entry.skills.some((skill) => skill.id === "aws"),
       ),
     ).toBe(false);
+  });
+});
+
+describe("extractResume", () => {
+  const input = {
+    sourceId: "source-1",
+    displayName: "Pasted resume",
+    text: resumeText,
+  };
+
+  it("returns a usable draft from valid raw AI extraction", async () => {
+    const draft = await extractResume(input, async () =>
+      extraction({
+        candidateName: "Jordan Lee",
+        program: "B.S. Computer Science",
+        institution: "State University",
+        skillsSectionExcerpt: "Skills: AWS, Docker",
+        items: [
+          item({
+            kind: "work",
+            title: "Software Engineering Intern",
+            organization: "Itron",
+            startDate: "2025-05",
+            endDate: "2025-08",
+            sourceExcerpt:
+              "Software Engineering Intern — Itron\nBuilt .NET MAUI features.",
+            skills: [
+              {
+                sourcePhrase: ".NET MAUI",
+                evidence: "Built .NET MAUI features.",
+                mappings: [
+                  { canonicalSkillId: "dotnet-maui", confidence: 0.99 },
+                ],
+              },
+            ],
+          }),
+          item({
+            kind: "project",
+            title: "Catalyst",
+            sourceExcerpt: "Catalyst\nBuilt a React dashboard.",
+            skills: [
+              {
+                sourcePhrase: "React",
+                evidence: "Built a React dashboard.",
+                mappings: [
+                  { canonicalSkillId: "react", confidence: 0.99 },
+                ],
+              },
+            ],
+          }),
+        ],
+        standaloneSkills: [
+          {
+            sourcePhrase: "AWS",
+            evidence: "Listed under Skills.",
+            mappings: [{ canonicalSkillId: "aws", confidence: 0.9 }],
+          },
+        ],
+      }),
+    );
+
+    expect(draft.proposedName).toBe("Jordan Lee");
+    expect(draft.program).toBe("B.S. Computer Science");
+    expect(draft.institution).toBe("State University");
+    expect(draft.items.map((entry) => entry.title)).toEqual([
+      "Software Engineering Intern",
+      "Catalyst",
+    ]);
+    expect(draft.standaloneSkills.map((skill) => skill.id)).toContain("aws");
+  });
+
+  it("throws when every extracted item is rejected by grounding", async () => {
+    await expect(
+      extractResume(input, async () =>
+        extraction({
+          items: [
+            item({
+              kind: "work",
+              title: "Invented Role",
+              sourceExcerpt: "This excerpt is not present in the resume text.",
+              skills: [],
+            }),
+          ],
+          standaloneSkills: [],
+        }),
+      ),
+    ).rejects.toBeInstanceOf(ResumeExtractionEmptyError);
   });
 });
