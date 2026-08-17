@@ -8,8 +8,10 @@ Career readiness remains deterministic after evidence is normalized into canonic
 
 Evidence enters a student profile through:
 
+- Resume import, after human review of an isolated draft
 - AI extraction (“Analyze with Mova”), after human review
 - Manual course and experience create/edit
+- Self-reported skills listed without an activity
 - Skill rename, which is treated as an evidence edit
 - Demo/sample profile literals
 - Recommendation/scenario packages, which already use canonical Career Model IDs and are not semantically reinterpreted
@@ -44,6 +46,8 @@ Implications are safe deterministic evidence relationships, expanded recursively
 
 Approving a parent includes its implications. Derived evidence is not an independent user choice.
 
+`selfReported` is stored only on direct roots the student listed. If a canonical skill is both a direct self-reported root and derived from another root, reconciliation keeps `selfReported: true`. Derived evidence never overwrites that provenance. Activity-backed status can still raise the same skill to demonstrated.
+
 ## 5. Semantic AI mapping
 
 One structured model call receives a closed MOVa catalog. The model proposes catalog IDs with per-mapping evidence confidence.
@@ -59,6 +63,10 @@ Server-side validation:
 7. Direct evidence wins over derived evidence when IDs collide
 
 Scanning source text never independently creates technology evidence. A name appearing in text is mention, not demonstrated work, unless the model proposes it and grounding succeeds.
+
+Resume import grounds each activity against that item's `sourceExcerpt`, not the full resume. `sourceExcerpt` must be a short contiguous resume block for that item; oversized or whole-resume excerpts are rejected so they cannot weaken item-level grounding.
+
+Standalone Skills-section claims are grounded against `skillsSectionExcerpt` only. That excerpt is also length-bounded and must occur in the full resume.
 
 ## 6. Unknown evidence
 

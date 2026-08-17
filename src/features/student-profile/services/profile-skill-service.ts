@@ -33,12 +33,13 @@ import {
     status: ProfileItemProgress;
   };
   
-  export type ManagedProfileSkill = {
-    id: string;
-    name: string;
-    status: ManagedSkillStatus;
-    sources: SkillEvidenceSource[];
-  };
+export type ManagedProfileSkill = {
+  id: string;
+  name: string;
+  status: ManagedSkillStatus;
+  sources: SkillEvidenceSource[];
+  selfReported?: boolean;
+};
   
   function determineSkillStatus(
     sources: SkillEvidenceSource[],
@@ -167,18 +168,21 @@ import {
   
         return {
           id: skillId,
-  
+
           name:
             existingSkill?.name ??
             getEvidenceSkillName(skillId),
-  
+
           status:
             determineSkillStatus(
               sources,
               existingSkill,
             ),
-  
+
           sources,
+          ...(existingSkill?.selfReported
+            ? { selfReported: true as const }
+            : {}),
         };
       })
       .sort((left, right) =>
@@ -359,6 +363,13 @@ import {
                       ? targetSkill?.status
                       : existing?.status,
                   ),
+                  ...(skill.id === nextSkillId &&
+                  currentSkill?.selfReported
+                    ? { selfReported: true as const }
+                    : existing?.selfReported &&
+                        skill.id !== skillId
+                      ? { selfReported: true as const }
+                      : {}),
                 };
               },
             ),

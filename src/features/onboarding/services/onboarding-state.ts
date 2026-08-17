@@ -7,7 +7,7 @@ import {
 export function initialOnboarding(): OnboardingState {
   return {
     completed: false,
-    step: "career-goal",
+    step: "build-profile",
   };
 }
 

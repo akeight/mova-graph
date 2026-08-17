@@ -32,6 +32,9 @@ import {
 import { reconcileProfileSkills } from
   "../utils/reconcile-profile-skills";
 
+import { PROFILE_ITEM_DESCRIPTION_MAX } from
+  "../constants";
+
 import { getSkillContributionStatus } from
   "../utils/profile-item-status";
 
@@ -79,19 +82,23 @@ function mergeNormalizedSkills(
     const existingSkill =
       skills.get(incoming.id);
 
-    skills.set(incoming.id, {
-      id: incoming.id,
-      name:
-        existingSkill?.name ??
-        incoming.name,
+      skills.set(incoming.id, {
+        id: incoming.id,
+        name:
+          existingSkill?.name ??
+          incoming.name,
 
-      status:
-        existingSkill?.status ===
-          "demonstrated" ||
-        status === "demonstrated"
-          ? "demonstrated"
-          : "developing",
-    });
+        status:
+          existingSkill?.status ===
+            "demonstrated" ||
+          status === "demonstrated"
+            ? "demonstrated"
+            : "developing",
+
+        ...(existingSkill?.selfReported
+          ? { selfReported: true as const }
+          : {}),
+      });
   }
 
   return Array.from(
@@ -403,6 +410,27 @@ export function StudentProfileForm({
             className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
           />
         </label>
+
+        <label className="block space-y-1.5">
+          <span className="text-xs font-medium">
+            Institution
+          </span>
+
+          <input
+            value={
+              profile.institution ?? ""
+            }
+            onChange={(event) => {
+              onChange({
+                ...profile,
+                institution:
+                  event.target.value,
+              });
+            }}
+            placeholder="State University"
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+          />
+        </label>
       </div>
 
       <div className="border-t pt-5">
@@ -441,7 +469,7 @@ export function StudentProfileForm({
             }
             placeholder="Short description, optional"
             rows={2}
-            maxLength={500}
+            maxLength={PROFILE_ITEM_DESCRIPTION_MAX}
             className="w-full resize-none rounded-md border bg-background px-3 py-2 text-sm"
           />
 
@@ -529,7 +557,7 @@ export function StudentProfileForm({
             }
             placeholder="What did you build or contribute?"
             rows={2}
-            maxLength={500}
+            maxLength={PROFILE_ITEM_DESCRIPTION_MAX}
             className="w-full resize-none rounded-md border bg-background px-3 py-2 text-sm"
           />
 

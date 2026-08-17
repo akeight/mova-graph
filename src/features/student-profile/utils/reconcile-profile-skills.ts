@@ -1,3 +1,10 @@
+import {
+  expandEvidenceImplications,
+} from "@/features/goals/services/normalize-evidence";
+import {
+  getEvidenceSkillName,
+} from "@/features/goals/data/evidence-skills";
+
 import type {
   StudentProfile,
   StudentSkill,
@@ -23,6 +30,12 @@ function mergeStatus(
 function createSkillName(
   skillId: string,
 ): string {
+  const registryName = getEvidenceSkillName(skillId);
+
+  if (registryName !== skillId) {
+    return registryName;
+  }
+
   return skillId
     .split("-")
     .map(
@@ -36,10 +49,38 @@ function createSkillName(
 export function reconcileProfileSkills(
   profile: StudentProfile,
 ): StudentProfile {
-  const activeSkillStatuses = new Map<
-    string,
-    StudentSkill["status"]
-  >();
+  const statuses = new Map<string, StudentSkill["status"]>();
+  const names = new Map<string, string>();
+  const selfReportedRoots = new Set<string>();
+
+  const existingById = new Map(
+    profile.skills.map((skill) => [skill.id, skill]),
+  );
+
+  const rememberName = (skillId: string, name?: string) => {
+    if (names.has(skillId)) {
+      return;
+    }
+
+    names.set(
+      skillId,
+      name ??
+        existingById.get(skillId)?.name ??
+        createSkillName(skillId),
+    );
+  };
+
+  const contribute = (
+    skillId: string,
+    status: StudentSkill["status"],
+    name?: string,
+  ) => {
+    rememberName(skillId, name);
+    statuses.set(
+      skillId,
+      mergeStatus(statuses.get(skillId), status),
+    );
+  };
 
   const activities = [
     ...profile.courses,
@@ -48,47 +89,48 @@ export function reconcileProfileSkills(
 
   for (const activity of activities) {
     const contributionStatus =
-      getSkillContributionStatus(
-        activity.status,
-      );
+      getSkillContributionStatus(activity.status);
 
     if (!contributionStatus) {
       continue;
     }
 
     for (const skillId of activity.skillIds) {
-      activeSkillStatuses.set(
-        skillId,
-        mergeStatus(
-          activeSkillStatuses.get(skillId),
-          contributionStatus,
-        ),
-      );
+      contribute(skillId, contributionStatus);
     }
   }
 
-  const skillById = new Map(
-    profile.skills.map((skill) => [
+  for (const skill of profile.skills) {
+    if (skill.selfReported !== true) {
+      continue;
+    }
+
+    selfReportedRoots.add(skill.id);
+    contribute(skill.id, "developing", skill.name);
+
+    for (const derived of expandEvidenceImplications(
       skill.id,
-      skill,
-    ]),
-  );
+      skill.name,
+    )) {
+      contribute(derived.id, "developing", derived.name);
+    }
+  }
 
-  const reconciledSkills =
-    Array.from(
-      activeSkillStatuses.entries(),
-    ).map(([skillId, status]) => {
-      const existingSkill =
-        skillById.get(skillId);
-
-      return {
+  const reconciledSkills = Array.from(statuses.entries()).map(
+    ([skillId, status]) => {
+      const skill: StudentSkill = {
         id: skillId,
-        name:
-          existingSkill?.name ??
-          createSkillName(skillId),
+        name: names.get(skillId) ?? createSkillName(skillId),
         status,
-      } satisfies StudentSkill;
-    });
+      };
+
+      if (selfReportedRoots.has(skillId)) {
+        skill.selfReported = true;
+      }
+
+      return skill;
+    },
+  );
 
   return {
     ...profile,

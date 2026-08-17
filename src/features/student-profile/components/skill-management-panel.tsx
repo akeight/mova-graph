@@ -25,6 +25,9 @@ import {
   type ManagedSkillStatus,
 } from "../services/profile-skill-service";
 
+import { removeSelfReportedSkill } from
+  "../services/profile-self-reported-skill-service";
+
 type SkillManagementPanelProps = {
   profile: StudentProfile;
 
@@ -122,6 +125,27 @@ export function SkillManagementPanel({
     skillId: string,
     name: string,
   ) => {
+    const managedSkill = skills.find(
+      (skill) => skill.id === skillId,
+    );
+    const hasActivitySources =
+      (managedSkill?.sources.length ?? 0) > 0;
+
+    if (!hasActivitySources && managedSkill?.selfReported) {
+      onChange(
+        removeSelfReportedSkill(
+          profile,
+          skillId,
+        ),
+      );
+
+      if (editingSkillId === skillId) {
+        cancelEditing();
+      }
+
+      return;
+    }
+
     const shouldRemove =
       window.confirm(
         [
@@ -167,8 +191,8 @@ export function SkillManagementPanel({
       {skills.length === 0 ? (
         <div className="rounded-lg border border-dashed p-4 text-center">
           <p className="text-xs text-muted-foreground">
-            Add a course or experience to begin
-            building your skill profile.
+            Add a course, experience, or listed
+            skill to begin building your profile.
           </p>
         </div>
       ) : null}
@@ -290,6 +314,12 @@ export function SkillManagementPanel({
                   >
                     {status.label}
                   </span>
+
+                  {skill.selfReported ? (
+                    <span className="rounded-full border border-primary/20 bg-primary/8 px-2 py-0.5 text-[10px] font-medium text-primary">
+                      Listed by you
+                    </span>
+                  ) : null}
                 </div>
 
                 <p className="mt-1 break-all text-[10px] text-muted-foreground">

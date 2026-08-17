@@ -1,6 +1,8 @@
 import type {
   CourseProgress,
   ExperienceProgress,
+  StudentCourse,
+  StudentExperience,
   StudentProfile,
   StudentSkill,
 } from "../types/student-profile";
@@ -28,6 +30,7 @@ export type ProfileItemUpdate =
       description?: string;
       status: CourseProgress;
       skillNames: string[];
+      courseKind?: StudentCourse["kind"];
     }
   | {
       kind: "experience";
@@ -36,6 +39,10 @@ export type ProfileItemUpdate =
       description?: string;
       status: ExperienceProgress;
       skillNames: string[];
+      experienceKind?: StudentExperience["kind"];
+      organization?: string;
+      startDate?: string;
+      endDate?: string;
     };
 
 export function normalizeSkillNames(
@@ -70,6 +77,9 @@ function mergeSkillMetadata(
       status:
         existingSkill?.status ??
         "developing",
+      ...(existingSkill?.selfReported
+        ? { selfReported: true as const }
+        : {}),
     });
   }
 
@@ -161,6 +171,9 @@ export function updateProfileItem(
                     undefined,
                   status: update.status,
                   skillIds,
+                  kind:
+                    update.courseKind ??
+                    course.kind,
                 }
               : course,
         ),
@@ -197,6 +210,19 @@ export function updateProfileItem(
                   undefined,
                 status: update.status,
                 skillIds,
+                kind:
+                  update.experienceKind ??
+                  experience.kind,
+                organization:
+                  update.organization
+                    ?.trim() ||
+                  experience.organization,
+                startDate:
+                  update.startDate ??
+                  experience.startDate,
+                endDate:
+                  update.endDate ??
+                  experience.endDate,
               }
             : experience,
       ),

@@ -13,16 +13,11 @@ type OnboardingProgressStep = {
 
 /** Steps shown in the indicator. `account` is pre-completed via auth. */
 const PROGRESS_STEPS: OnboardingProgressStep[] = [
-  { step: "account", label: "Account" },
-  { step: "career-goal", label: "Career goal" },
-  { step: "build-profile", label: "Build profile" },
-  { step: "review-path", label: "Review path" },
-  { step: "finish", label: "Finish" },
+  { step: "build-profile", label: "Profile" },
+  { step: "career-goal", label: "Career" },
+  { step: "review-path", label: "Path" },
+  { step: "finish", label: "Done" },
 ];
-
-const ORDER: OnboardingStep[] = PROGRESS_STEPS.map(
-  (item) => item.step,
-);
 
 type OnboardingProgressProps = {
   currentStep: OnboardingStep;
@@ -31,9 +26,12 @@ type OnboardingProgressProps = {
 export function OnboardingProgress({
   currentStep,
 }: OnboardingProgressProps) {
-  const currentIndex = ORDER.indexOf(currentStep);
+  const currentIndex = Math.max(
+    PROGRESS_STEPS.findIndex((item) => item.step === currentStep),
+    0,
+  );
   const totalSteps = PROGRESS_STEPS.length;
-  const stepNumber = Math.max(currentIndex, 0) + 1;
+  const stepNumber = currentIndex + 1;
 
   return (
     <div className="w-full">

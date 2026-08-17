@@ -29,6 +29,8 @@ import {
   completeOnboarding,
   initialOnboarding,
 } from "@/features/onboarding/services/onboarding-state";
+import { resumeOnboardingStep } from
+  "@/features/onboarding/services/resume-onboarding-step";
 import type {
   OnboardingState,
   OnboardingStep,
@@ -182,9 +184,13 @@ export function MovaWorkspace({
           workspace.selectedRoleId,
         );
 
-        setOnboarding(
-          workspace.onboarding,
-        );
+        setOnboarding({
+          ...workspace.onboarding,
+          step: resumeOnboardingStep(
+            workspace.onboarding,
+            workspace.profile,
+          ),
+        });
 
         setActiveRecommendationId(
           null,

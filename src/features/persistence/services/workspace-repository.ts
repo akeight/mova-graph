@@ -25,7 +25,7 @@ function mapWorkspaceRow(
       selectedRoleId: row.selectedRoleId,
       onboarding: {
         completed: row.onboardingCompleted,
-        step: row.onboardingStep ?? "career-goal",
+        step: row.onboardingStep ?? "build-profile",
       },
     });
 

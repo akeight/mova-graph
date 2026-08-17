@@ -40,6 +40,34 @@ export const rawEvidenceMappingSchema =
       ),
   });
 
+export const rawEvidenceClaimSchema =
+  z.object({
+    sourcePhrase: z
+      .string()
+      .trim()
+      .min(1)
+      .max(120)
+      .describe(
+        "A short phrase copied from the student source. Must be grounded in that source.",
+      ),
+
+    evidence: z
+      .string()
+      .trim()
+      .min(1)
+      .max(200)
+      .describe(
+        "What in the source supports these mappings. Must stay grounded in student text.",
+      ),
+
+    mappings: z
+      .array(rawEvidenceMappingSchema)
+      .max(8)
+      .describe(
+        "Canonical catalog mappings. May be empty when the phrase is unknown evidence.",
+      ),
+  });
+
 export const rawProfileItemExtractionSchema =
   z.object({
     title: z
@@ -61,34 +89,7 @@ export const rawProfileItemExtractionSchema =
       ),
 
     skills: z
-      .array(
-        z.object({
-          sourcePhrase: z
-            .string()
-            .trim()
-            .min(1)
-            .max(120)
-            .describe(
-              "A short phrase copied from the student source. Must be grounded in that source.",
-            ),
-
-          evidence: z
-            .string()
-            .trim()
-            .min(1)
-            .max(200)
-            .describe(
-              "What in the source supports these mappings. Must stay grounded in student text.",
-            ),
-
-          mappings: z
-            .array(rawEvidenceMappingSchema)
-            .max(8)
-            .describe(
-              "Canonical catalog mappings. May be empty when the phrase is unknown evidence.",
-            ),
-        }),
-      )
+      .array(rawEvidenceClaimSchema)
       .max(8),
   });
 

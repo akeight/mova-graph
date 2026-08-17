@@ -69,6 +69,61 @@ describe("workspaceSnapshotSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  it("accepts optional profile fields without a version bump", () => {
+    const parsed = workspaceSnapshotSchema.parse({
+      ...validSnapshot,
+      profile: {
+        ...validSnapshot.profile,
+        institution: "State University",
+        experiences: [
+          {
+            id: "experience-1",
+            title: "Software Intern",
+            status: "completed",
+            skillIds: ["react"],
+            kind: "work",
+            organization: "Acme",
+            startDate: "2025-05",
+            endDate: "2025-08",
+          },
+        ],
+        skills: [
+          ...validSnapshot.profile.skills,
+          {
+            id: "aws",
+            name: "AWS",
+            status: "developing",
+            selfReported: true,
+          },
+        ],
+      },
+    });
+
+    expect(parsed.profile.institution).toBe("State University");
+    expect(parsed.profile.experiences[0]?.startDate).toBe("2025-05");
+    expect(parsed.profile.skills.at(-1)?.selfReported).toBe(true);
+  });
+
+  it("rejects arbitrary experience dates", () => {
+    const result = workspaceSnapshotSchema.safeParse({
+      ...validSnapshot,
+      profile: {
+        ...validSnapshot.profile,
+        experiences: [
+          {
+            id: "experience-1",
+            title: "Software Intern",
+            status: "completed",
+            skillIds: ["react"],
+            startDate: "May 2025",
+          },
+        ],
+      },
+    });
+
+    expect(result.success).toBe(false);
+  });
+
   it("rejects invalid course progress", () => {
     const result = workspaceSnapshotSchema.safeParse({
       ...validSnapshot,
@@ -102,7 +157,7 @@ describe("storedWorkspaceSnapshotSchema", () => {
     expect(parsed.version).toBe(2);
     expect(parsed.onboarding).toEqual({
       completed: false,
-      step: "career-goal",
+      step: "build-profile",
     });
   });
 

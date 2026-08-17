@@ -19,6 +19,9 @@ import type {
   StudentExperience,
 } from "../types/student-profile";
 
+import { PROFILE_ITEM_DESCRIPTION_MAX } from
+  "../constants";
+
 type EditableItem =
   | StudentCourse
   | StudentExperience;
@@ -191,7 +194,7 @@ export function EditableProfileItemCard({
               )
             }
             rows={3}
-            maxLength={500}
+            maxLength={PROFILE_ITEM_DESCRIPTION_MAX}
             className="w-full resize-y rounded-md border bg-background px-3 py-2 text-sm"
           />
         </label>

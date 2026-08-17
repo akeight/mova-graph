@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { getAuthenticatedUser } from
+  "@/features/auth/services/session";
 import {
   profileItemExtractionInputSchema,
 } from "@/features/skill-analysis/schemas/profile-item-extraction";
@@ -13,6 +15,14 @@ export const runtime = "nodejs";
 export async function POST(
   request: Request,
 ) {
+  const user = await getAuthenticatedUser();
+
+  if (!user) {
+    return NextResponse.json(
+      { error: "You must be signed in." },
+      { status: 401 },
+    );
+  }
   let body: unknown;
 
   try {
