@@ -104,17 +104,12 @@ export function normalizeRawResumeExtraction(
   resumeText: string,
 ): ResumeImportDraft {
   const itemCount = raw.items.length;
-  const hasSkillsSection = Boolean(raw.skillsSectionExcerpt?.trim());
   const items: ResumeDraftItem[] = [];
 
   for (const item of raw.items) {
     const excerptOk = isItemExcerptAcceptable(
       item.sourceExcerpt,
       resumeText,
-      {
-        itemCount,
-        hasSkillsSection,
-      },
     );
 
     if (!excerptOk) {

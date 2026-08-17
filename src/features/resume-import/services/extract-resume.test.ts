@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 import { normalizeRawResumeExtraction } from "./extract-resume";
 
 const resumeText = [
+  "Jordan Lee",
+  "B.S. Computer Science, State University, 2022-2026",
+  "Coursework: Data Structures, Algorithms, Operating Systems, Databases",
   "Software Engineering Intern — Itron",
   "Built .NET MAUI features.",
   "Catalyst",
@@ -206,6 +209,14 @@ describe("normalizeRawResumeExtraction", () => {
 
   it("preselects high-confidence direct evidence and leaves 0.70 unselected", () => {
     const catalystResume = [
+      "Jordan Lee",
+      "B.S. Computer Science, State University",
+      "Coursework: Data Structures, Algorithms, Operating Systems",
+      "Catalyst",
+      "Built a React dashboard using TypeScript.",
+      "Volunteer tutor for introductory programming.",
+    ].join("\n");
+    const catalystExcerpt = [
       "Catalyst",
       "Built a React dashboard using TypeScript.",
     ].join("\n");
@@ -218,7 +229,7 @@ describe("normalizeRawResumeExtraction", () => {
           {
             kind: "project",
             title: "Catalyst",
-            sourceExcerpt: catalystResume,
+            sourceExcerpt: catalystExcerpt,
             skills: [
               {
                 sourcePhrase: "React",
@@ -292,5 +303,53 @@ describe("normalizeRawResumeExtraction", () => {
 
     expect(draft.items).toHaveLength(0);
     expect(draft.standaloneSkills.map((skill) => skill.id)).toContain("aws");
+  });
+
+  it("rejects a whole-resume work excerpt even when the model omits the skills section", () => {
+    const mixedResume = [
+      "Software Engineering Intern — Acme",
+      "Built internal tooling for the platform team.",
+      "B.S. Computer Science, State University",
+      "Coursework includes algorithms, operating systems, and databases.",
+      "Skills: AWS",
+    ].join("\n");
+
+    const draft = normalizeRawResumeExtraction(
+      "source-1",
+      "swe.pdf",
+      {
+        items: [
+          {
+            kind: "work",
+            title: "Software Engineering Intern",
+            organization: "Acme",
+            sourceExcerpt: mixedResume,
+            skills: [
+              {
+                sourcePhrase: "AWS",
+                evidence: "Skills: AWS",
+                mappings: [{ canonicalSkillId: "aws", confidence: 0.99 }],
+              },
+            ],
+          },
+        ],
+        standaloneSkills: [
+          {
+            sourcePhrase: "AWS",
+            evidence: "Listed under Skills.",
+            mappings: [{ canonicalSkillId: "aws", confidence: 0.9 }],
+          },
+        ],
+      },
+      mixedResume,
+    );
+
+    expect(draft.items).toHaveLength(0);
+    expect(draft.standaloneSkills).toEqual([]);
+    expect(
+      draft.items.some((item) =>
+        item.skills.some((skill) => skill.id === "aws"),
+      ),
+    ).toBe(false);
   });
 });

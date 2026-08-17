@@ -324,6 +324,9 @@ export function StudentProfileForm({
 
         skillNames:
           draft.skillNames,
+        organization: draft.organization,
+        startDate: draft.startDate,
+        endDate: draft.endDate,
       }),
     );
   };

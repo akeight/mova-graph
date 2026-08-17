@@ -11,33 +11,23 @@ import {
   SOURCE_EXCERPT_MIN_CHARS,
 } from "../constants";
 
-export type ItemExcerptContext = {
-  itemCount: number;
-  hasSkillsSection: boolean;
-};
-
-function isWholeResumeExcerpt(
+function isExactWholeResumeExcerpt(
   excerpt: string,
   resumeText: string,
-  maxChars: number,
 ): boolean {
   const excerptKey = createEvidenceLookupKey(excerpt);
   const resumeKey = createEvidenceLookupKey(resumeText);
 
-  if (excerptKey && resumeKey && excerptKey === resumeKey) {
-    return true;
-  }
+  return Boolean(excerptKey && resumeKey && excerptKey === resumeKey);
+}
 
-  return (
-    resumeText.length > maxChars &&
-    excerpt.length > resumeText.length * MAX_EXCERPT_RESUME_FRACTION
-  );
+function isOversizedExcerpt(excerpt: string, resumeText: string): boolean {
+  return excerpt.length > resumeText.length * MAX_EXCERPT_RESUME_FRACTION;
 }
 
 export function isItemExcerptAcceptable(
   excerpt: string,
   resumeText: string,
-  context: ItemExcerptContext,
 ): boolean {
   const trimmed = excerpt.trim();
 
@@ -52,12 +42,9 @@ export function isItemExcerptAcceptable(
     return false;
   }
 
-  const guardWholeResume =
-    context.itemCount > 1 || context.hasSkillsSection;
-
   if (
-    guardWholeResume &&
-    isWholeResumeExcerpt(trimmed, resumeText, SOURCE_EXCERPT_MAX_CHARS)
+    isExactWholeResumeExcerpt(trimmed, resumeText) ||
+    isOversizedExcerpt(trimmed, resumeText)
   ) {
     return false;
   }
@@ -85,11 +72,8 @@ export function isSkillsSectionExcerptAcceptable(
 
   if (
     itemCount > 0 &&
-    isWholeResumeExcerpt(
-      trimmed,
-      resumeText,
-      SKILLS_SECTION_EXCERPT_MAX_CHARS,
-    )
+    (isExactWholeResumeExcerpt(trimmed, resumeText) ||
+      isOversizedExcerpt(trimmed, resumeText))
   ) {
     return false;
   }

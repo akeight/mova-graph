@@ -12,12 +12,17 @@ import type { ExtractedSkill } from
   "@/features/skill-analysis/types/profile-item-extraction";
 
 import {
-  createManualDraftSkill,
+  addManualSkillToDraftItem,
   isDirectDraftSkill,
+  isManualDraftSkill,
 } from "../services/resume-draft-skills";
 import type { ResumeDraftItem } from "../types/resume-import";
 
 function evidenceConfidenceLabel(skill: ExtractedSkill) {
+  if (isManualDraftSkill(skill)) {
+    return "Added by you";
+  }
+
   if (skill.normalizationMethod === "unmapped") {
     return null;
   }
@@ -81,28 +86,13 @@ export function ResumeDraftEvidenceEditor({
   };
 
   const addSkill = () => {
-    const created = createManualDraftSkill(skillName);
+    const nextItem = addManualSkillToDraftItem(item, skillName);
 
-    if (!created) {
+    if (nextItem === item && !skillName.trim()) {
       return;
     }
 
-    if (item.skills.some((skill) => skill.id === created.id)) {
-      updateItem({
-        ...item,
-        selectedSkillIds: Array.from(
-          new Set([...item.selectedSkillIds, created.id]),
-        ),
-      });
-      setSkillName("");
-      return;
-    }
-
-    updateItem({
-      ...item,
-      skills: [...item.skills, created],
-      selectedSkillIds: [...item.selectedSkillIds, created.id],
-    });
+    updateItem(nextItem);
     setSkillName("");
   };
 

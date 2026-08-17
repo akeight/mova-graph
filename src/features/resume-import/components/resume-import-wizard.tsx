@@ -296,7 +296,19 @@ export function ResumeImportWizard({
               className="flex items-center justify-between rounded-xl border bg-card px-3 py-2 text-sm"
             >
               <span>{source.displayName}</span>
-              <span className="text-xs text-muted-foreground">Ready</span>
+              <button
+                type="button"
+                className="rounded-md p-1 text-muted-foreground hover:text-destructive"
+                aria-label={`Remove ${source.displayName}`}
+                onClick={() => {
+                  setSources((current) =>
+                    current.filter((entry) => entry.id !== source.id),
+                  );
+                  setError(null);
+                }}
+              >
+                Remove
+              </button>
             </li>
           ))}
         </ul>
@@ -751,81 +763,83 @@ function ReviewSection({
                 }
               />
               {isCourseKind(item.kind) ? null : (
-                <Input
-                  value={item.organization ?? ""}
-                  placeholder="Organization"
-                  onChange={(event) =>
-                    onChange({
-                      ...draft,
-                      items: draft.items.map((current) =>
-                        current.id === item.id
-                          ? { ...current, organization: event.target.value }
-                          : current,
-                      ),
-                    })
-                  }
-                />
+                <>
+                  <Input
+                    value={item.organization ?? ""}
+                    placeholder="Organization"
+                    onChange={(event) =>
+                      onChange({
+                        ...draft,
+                        items: draft.items.map((current) =>
+                          current.id === item.id
+                            ? { ...current, organization: event.target.value }
+                            : current,
+                        ),
+                      })
+                    }
+                  />
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <Input
+                      value={item.startDate ?? ""}
+                      placeholder="Start YYYY or YYYY-MM"
+                      onChange={(event) => {
+                        const value = event.target.value;
+
+                        if (!isDateDraftInput(value)) {
+                          return;
+                        }
+
+                        onChange({
+                          ...draft,
+                          items: draft.items.map((current) =>
+                            current.id === item.id
+                              ? {
+                                  ...current,
+                                  startDate: value || undefined,
+                                }
+                              : current,
+                          ),
+                        });
+                      }}
+                    />
+                    <Input
+                      value={item.endDate ?? ""}
+                      placeholder="End YYYY or YYYY-MM"
+                      onChange={(event) => {
+                        const value = event.target.value;
+
+                        if (!isDateDraftInput(value)) {
+                          return;
+                        }
+
+                        onChange({
+                          ...draft,
+                          items: draft.items.map((current) =>
+                            current.id === item.id
+                              ? {
+                                  ...current,
+                                  endDate: value || undefined,
+                                }
+                              : current,
+                          ),
+                        });
+                      }}
+                    />
+                  </div>
+                  {item.startDate &&
+                  !PROFILE_ITEM_DATE_PATTERN.test(item.startDate) ? (
+                    <p className="text-xs text-destructive">
+                      Use YYYY or YYYY-MM, with months 01–12.
+                    </p>
+                  ) : null}
+                  {item.endDate &&
+                  !PROFILE_ITEM_DATE_PATTERN.test(item.endDate) ? (
+                    <p className="text-xs text-destructive">
+                      Use YYYY or YYYY-MM, with months 01–12.
+                    </p>
+                  ) : null}
+                </>
               )}
-              <div className="grid gap-2 sm:grid-cols-2">
-                <Input
-                  value={item.startDate ?? ""}
-                  placeholder="Start YYYY or YYYY-MM"
-                  onChange={(event) => {
-                    const value = event.target.value;
-
-                    if (!isDateDraftInput(value)) {
-                      return;
-                    }
-
-                    onChange({
-                      ...draft,
-                      items: draft.items.map((current) =>
-                        current.id === item.id
-                          ? {
-                              ...current,
-                              startDate: value || undefined,
-                            }
-                          : current,
-                      ),
-                    });
-                  }}
-                />
-                <Input
-                  value={item.endDate ?? ""}
-                  placeholder="End YYYY or YYYY-MM"
-                  onChange={(event) => {
-                    const value = event.target.value;
-
-                    if (!isDateDraftInput(value)) {
-                      return;
-                    }
-
-                    onChange({
-                      ...draft,
-                      items: draft.items.map((current) =>
-                        current.id === item.id
-                          ? {
-                              ...current,
-                              endDate: value || undefined,
-                            }
-                          : current,
-                      ),
-                    });
-                  }}
-                />
-              </div>
-              {item.startDate &&
-              !PROFILE_ITEM_DATE_PATTERN.test(item.startDate) ? (
-                <p className="text-xs text-destructive">
-                  Use YYYY or YYYY-MM, with months 01–12.
-                </p>
-              ) : null}
-              {item.endDate &&
-              !PROFILE_ITEM_DATE_PATTERN.test(item.endDate) ? (
-                <p className="text-xs text-destructive">
-                  Use YYYY or YYYY-MM, with months 01–12.
-                </p>
-              ) : null}
               <Textarea
                 value={item.description ?? ""}
                 rows={3}

@@ -142,12 +142,12 @@ export function findResumeItemDuplicates(
 
       const exact =
         (orgsMatch || (bothOrgsMissing && isCourseKind(left.kind))) &&
-        (leftTitle === rightTitle || titleContained || titleScore >= 0.9);
+        leftTitle === rightTitle;
 
       const probable =
         !exact &&
         (orgsMatch || bothOrgsMissing) &&
-        titleScore >= 0.55;
+        (titleContained || titleScore >= 0.55);
 
       if (exact) {
         usedRight.add(right.id);

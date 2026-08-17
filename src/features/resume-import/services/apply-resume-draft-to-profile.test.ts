@@ -16,6 +16,8 @@ import {
 } from "./apply-resume-draft-to-profile";
 import { mergeResumeDraftItems } from
   "./merge-resume-draft-items";
+import { addManualSkillToDraftItem } from
+  "./resume-draft-skills";
 
 function emptyProfile(
   overrides: Partial<StudentProfile> = {},
@@ -253,6 +255,46 @@ describe("applyResumeDraftToProfile", () => {
     expect(result.experiences[0]?.skillIds).toEqual(
       expect.arrayContaining(["nextjs", "react"]),
     );
+  });
+
+  it("persists manually added React independently of unselected Next.js", () => {
+    const extracted = draftItem({
+      skills: [
+        {
+          id: "nextjs",
+          name: "Next.js",
+          confidence: 0.95,
+          evidence: "Built a Next.js dashboard",
+          provenance: "direct",
+        },
+        {
+          id: "react",
+          name: "React",
+          confidence: 0.99,
+          evidence: "Implied by Next.js",
+          provenance: "derived",
+          derivedFromSkillId: "nextjs",
+        },
+      ],
+      selectedSkillIds: ["nextjs"],
+    });
+    const withManualReact = addManualSkillToDraftItem(extracted, "React");
+    const reactOnly = {
+      ...withManualReact,
+      selectedSkillIds: ["react"],
+    };
+
+    const result = applyResumeDraftToProfile(
+      emptyProfile(),
+      emptyDraft({ items: [reactOnly] }),
+      "onboarding",
+    );
+
+    expect(
+      withManualReact.skills.find((skill) => skill.id === "react")?.provenance,
+    ).toBe("direct");
+    expect(result.experiences[0]?.skillIds).toContain("react");
+    expect(result.experiences[0]?.skillIds).not.toContain("nextjs");
   });
 
   it("does not persist a 0.70 mapping unless the user selects it", () => {

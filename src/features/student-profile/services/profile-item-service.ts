@@ -7,6 +7,8 @@ import type {
   StudentSkill,
 } from "../types/student-profile";
 
+import { PROFILE_ITEM_DATE_PATTERN } from
+  "../constants";
 import { reconcileProfileSkills } from
   "../utils/reconcile-profile-skills";
 
@@ -104,6 +106,16 @@ export function getProfileItemSkillNames(
       skillMap.get(skillId) ??
       getEvidenceSkillName(skillId),
   );
+}
+
+function persistableDate(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+
+  if (!trimmed || !PROFILE_ITEM_DATE_PATTERN.test(trimmed)) {
+    return undefined;
+  }
+
+  return trimmed;
 }
 
 export function updateProfileItem(
@@ -214,15 +226,17 @@ export function updateProfileItem(
                   update.experienceKind ??
                   experience.kind,
                 organization:
-                  update.organization
-                    ?.trim() ||
-                  experience.organization,
+                  update.organization !== undefined
+                    ? update.organization.trim() || undefined
+                    : experience.organization,
                 startDate:
-                  update.startDate ??
-                  experience.startDate,
+                  update.startDate !== undefined
+                    ? persistableDate(update.startDate)
+                    : experience.startDate,
                 endDate:
-                  update.endDate ??
-                  experience.endDate,
+                  update.endDate !== undefined
+                    ? persistableDate(update.endDate)
+                    : experience.endDate,
               }
             : experience,
       ),

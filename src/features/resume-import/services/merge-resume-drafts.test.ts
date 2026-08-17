@@ -68,7 +68,7 @@ describe("mergeResumeDrafts", () => {
         [
           item({
             id: "right",
-            title: "Mobile Software Engineering Intern",
+            title: "Software Engineering Intern",
             organization: "Acme",
             startDate: "2025-05",
             endDate: "2025-08",
@@ -127,6 +127,34 @@ describe("mergeResumeDrafts", () => {
 
     expect(merged.standaloneSkills).toHaveLength(1);
     expect(merged.standaloneSkills[0]?.id).toBe("postgresql");
+  });
+
+  it("does not auto-merge title containment as an exact duplicate", () => {
+    const merged = mergeResumeDrafts([
+      draft(
+        [item({
+          id: "left",
+          title: "Software Engineer",
+          organization: "Acme",
+        })],
+        "a",
+      ),
+      draft(
+        [item({
+          id: "right",
+          title: "Senior Software Engineer",
+          organization: "Acme",
+        })],
+        "b",
+      ),
+    ]);
+
+    expect(merged.items).toHaveLength(2);
+    expect(merged.possibleDuplicates).toHaveLength(1);
+    expect(merged.possibleDuplicates[0]).toMatchObject({
+      leftId: "left",
+      rightId: "right",
+    });
   });
 
   it("keeps probable duplicates reviewable until the user decides", () => {

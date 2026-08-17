@@ -141,6 +141,52 @@ import {
         result.experiences[0].status,
       ).toBe("dropped");
     });
+
+    it("persists imported experience organization and constrained dates", () => {
+      const result = updateProfileItem(profile, {
+        kind: "experience",
+        itemId: "experience-1",
+        title: "Mobile Project",
+        status: "completed",
+        skillNames: ["Mobile Development"],
+        organization: "Acme",
+        startDate: "2024-06",
+        endDate: "2025",
+      });
+
+      expect(result.experiences[0]).toMatchObject({
+        organization: "Acme",
+        startDate: "2024-06",
+        endDate: "2025",
+      });
+    });
+
+    it("rejects an invalid experience month instead of persisting it", () => {
+      const seeded = updateProfileItem(profile, {
+        kind: "experience",
+        itemId: "experience-1",
+        title: "Mobile Project",
+        status: "in-progress",
+        skillNames: ["Mobile Development"],
+        organization: "Acme",
+        startDate: "2024-06",
+        endDate: "2025-08",
+      });
+
+      const result = updateProfileItem(seeded, {
+        kind: "experience",
+        itemId: "experience-1",
+        title: "Mobile Project",
+        status: "in-progress",
+        skillNames: ["Mobile Development"],
+        organization: "Acme",
+        startDate: "2024-13",
+        endDate: "2025-08",
+      });
+
+      expect(result.experiences[0]?.startDate).toBeUndefined();
+      expect(result.experiences[0]?.endDate).toBe("2025-08");
+    });
   });
   
   describe("removeProfileItem", () => {

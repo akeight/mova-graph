@@ -6,9 +6,19 @@ import {
 } from "@/features/skill-analysis/services/normalize-extraction";
 import type { ExtractedSkill } from
   "@/features/skill-analysis/types/profile-item-extraction";
+import type { ResumeDraftItem } from "../types/resume-import";
+
+export const MANUAL_DRAFT_SKILL_EVIDENCE = "Added during review";
 
 export function isDirectDraftSkill(skill: ExtractedSkill): boolean {
   return skill.provenance !== "derived";
+}
+
+export function isManualDraftSkill(skill: ExtractedSkill): boolean {
+  return (
+    isDirectDraftSkill(skill) &&
+    skill.evidence === MANUAL_DRAFT_SKILL_EVIDENCE
+  );
 }
 
 export function selectedDirectSkillIds(
@@ -100,8 +110,31 @@ export function createManualDraftSkill(
     name: resolved.direct.name,
     sourcePhrase: resolved.direct.sourcePhrase,
     confidence: 1,
-    evidence: "Added during review",
+    evidence: MANUAL_DRAFT_SKILL_EVIDENCE,
     normalizationMethod: resolved.direct.method,
     provenance: "direct",
+  };
+}
+
+export function addManualSkillToDraftItem(
+  item: ResumeDraftItem,
+  skillName: string,
+): ResumeDraftItem {
+  const created = createManualDraftSkill(skillName);
+
+  if (!created) {
+    return item;
+  }
+
+  const skills = mergeExtractedSkills(item.skills, [created]);
+
+  return {
+    ...item,
+    skills,
+    selectedSkillIds: mergeSelectedSkillIds(
+      skills,
+      item.selectedSkillIds,
+      [created.id],
+    ),
   };
 }

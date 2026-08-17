@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import type { ResumeDraftItem } from "../types/resume-import";
+
 import {
+  addManualSkillToDraftItem,
   createManualDraftSkill,
   mergeExtractedSkills,
   mergeSelectedSkillIds,
@@ -101,5 +104,44 @@ describe("resume-draft-skills", () => {
       confidence: 1,
     });
     expect(selectedDirectSkillIds([skill!])).toEqual(["nextjs"]);
+  });
+
+  it("promotes a derived implication to selected direct evidence when added manually", () => {
+    const item: ResumeDraftItem = {
+      id: "draft-1",
+      kind: "work",
+      title: "Software Engineering Intern",
+      status: "completed",
+      skills: [
+        {
+          id: "nextjs",
+          name: "Next.js",
+          confidence: 0.95,
+          evidence: "Built a Next.js dashboard",
+          provenance: "direct",
+        },
+        {
+          id: "react",
+          name: "React",
+          confidence: 0.99,
+          evidence: "Implied by Next.js",
+          provenance: "derived",
+          derivedFromSkillId: "nextjs",
+        },
+      ],
+      selectedSkillIds: ["nextjs"],
+      sourceIds: ["a"],
+    };
+
+    const next = addManualSkillToDraftItem(item, "React");
+    const react = next.skills.find((skill) => skill.id === "react");
+
+    expect(react).toMatchObject({
+      provenance: "direct",
+      evidence: "Added during review",
+    });
+    expect(next.selectedSkillIds).toEqual(
+      expect.arrayContaining(["nextjs", "react"]),
+    );
   });
 });
