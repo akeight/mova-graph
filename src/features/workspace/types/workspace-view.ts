@@ -70,7 +70,7 @@ export const workspaceNavGroups: WorkspaceNavGroup[] = [
       {
         view: "what-if",
         label: "What If?",
-        description: "Preview how a move changes your readiness",
+        description: "See how completing an opportunity changes readiness",
         icon: FlaskConical,
       },
     ],

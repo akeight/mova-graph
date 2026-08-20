@@ -1,11 +1,11 @@
 import type { CareerRole } from "@/features/goals/types/career-role";
-import { calculateReadiness } from "@/features/readiness/services/calculate-readiness";
 import type { CompetencyReadiness } from "@/features/readiness/types/readiness";
 import type { NextMoveRecommendation } from "@/features/recommendations/types/recommendation";
 import { applyEvidencePackageToProfile } from "@/features/student-profile/services/apply-evidence-package";
 import type { StudentProfile } from "@/features/student-profile/types/student-profile";
 
 import type { RecommendationScenarioResult } from "../types/scenario";
+import { simulateEvidencePackage } from "./simulate-evidence-package";
 
 function getCompetency(
   competencies: CompetencyReadiness[],
@@ -41,37 +41,30 @@ export function simulateRecommendation(
   role: CareerRole,
   recommendation: NextMoveRecommendation,
 ): RecommendationScenarioResult {
-  const baselineAssessment = calculateReadiness(profile, role);
+  const simulated = simulateEvidencePackage(profile, role, {
+    idSuffix: recommendation.competencyId,
+    title: recommendation.title,
+    description: recommendation.action,
+    skillIds: recommendation.suggestedEvidenceSkillIds,
+  });
   const baselineCompetency = getCompetency(
-    baselineAssessment.competencies,
+    simulated.baselineAssessment.competencies,
     recommendation.competencyId,
   );
-
-  const projectedProfile = applyRecommendationToProfile(
-    profile,
-    recommendation,
-  );
-  const projectedAssessment = calculateReadiness(
-    projectedProfile,
-    role,
-  );
   const projectedCompetency = getCompetency(
-    projectedAssessment.competencies,
+    simulated.projectedAssessment.competencies,
     recommendation.competencyId,
   );
 
   return {
     id: ["scenario", role.id, recommendation.id].join("-"),
     recommendation,
-    projectedProfile,
-    baselineAssessment,
-    projectedAssessment,
-    scoreBefore: baselineAssessment.score,
-    scoreAfter: projectedAssessment.score,
-    scoreIncrease: Math.max(
-      0,
-      projectedAssessment.score - baselineAssessment.score,
-    ),
+    projectedProfile: simulated.projectedProfile,
+    baselineAssessment: simulated.baselineAssessment,
+    projectedAssessment: simulated.projectedAssessment,
+    scoreBefore: simulated.scoreBefore,
+    scoreAfter: simulated.scoreAfter,
+    scoreIncrease: Math.max(0, simulated.scoreIncrease),
     statusChange: {
       competencyId: recommendation.competencyId,
       competencyName: recommendation.competencyName,

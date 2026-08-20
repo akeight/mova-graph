@@ -15,6 +15,7 @@ Evidence enters a student profile through:
 - Skill rename, which is treated as an evidence edit
 - Demo/sample profile literals
 - Recommendation/scenario packages, which already use canonical Career Model IDs and are not semantically reinterpreted
+- Real-World What If temporary packages, which apply approved developable evidence to a cloned profile only. Prerequisite/qualification claims are dropped before normalization and never become projected evidence. These packages are not persisted and are not semantically reinterpreted after approval.
 
 Untouched legacy profile IDs are not rewritten on hydration.
 
