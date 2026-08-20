@@ -637,9 +637,12 @@ export function MovaWorkspace({
         profile={profile}
         onProfileChange={handleProfileChange}
         onActionChange={setProfileAction}
-        onOpenAiAssistant={() =>
-          setAiAssistantOpen(true)
-        }
+        onOpenAiAssistant={() => {
+          setProfileAction(null);
+          window.setTimeout(() => {
+            setAiAssistantOpen(true);
+          }, 100);
+        }}
       />
 
       <Dialog

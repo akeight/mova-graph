@@ -17,8 +17,12 @@ import { getEvidenceSkillName } from "@/features/goals/data/evidence-skills";
 import { addProfileItem } from "../services/profile-item-service";
 import { addSelfReportedSkills } from
   "../services/profile-self-reported-skill-service";
-import type { QuickAddType } from "../types/profile-action";
-import { contextualSkillIds } from "../types/profile-action";
+import {
+  contextualSkillIds,
+  quickAddPrefillSkillIds,
+  quickAddSkillContext,
+  type QuickAddType,
+} from "../types/profile-action";
 import type {
   CourseProgress,
   ExperienceProgress,
@@ -63,7 +67,11 @@ export function QuickAddEvidenceForm({
   onOpenAiAssistant,
   onClose,
 }: QuickAddEvidenceFormProps) {
-  const presetNames = evidenceNames(skillIds);
+  const presetNames = evidenceNames(quickAddPrefillSkillIds(skillIds));
+  const suggestionNames =
+    quickAddSkillContext(skillIds) === "multiple"
+      ? evidenceNames(skillIds)
+      : [];
 
   if (!itemType) {
     return (
@@ -108,6 +116,7 @@ export function QuickAddEvidenceForm({
       <SkillQuickAddForm
         profile={profile}
         presetName={presetNames[0]}
+        suggestionNames={suggestionNames}
         onChange={onChange}
         onClose={onClose}
       />
@@ -120,6 +129,7 @@ export function QuickAddEvidenceForm({
         profile={profile}
         certification={itemType === "certification"}
         presetNames={presetNames}
+        suggestionNames={suggestionNames}
         onChange={onChange}
         onClose={onClose}
       />
@@ -131,6 +141,7 @@ export function QuickAddEvidenceForm({
       profile={profile}
       project={itemType === "project"}
       presetNames={presetNames}
+      suggestionNames={suggestionNames}
       onChange={onChange}
       onClose={onClose}
     />
@@ -140,11 +151,13 @@ export function QuickAddEvidenceForm({
 function SkillQuickAddForm({
   profile,
   presetName,
+  suggestionNames,
   onChange,
   onClose,
 }: {
   profile: StudentProfile;
   presetName?: string;
+  suggestionNames: string[];
   onChange: (profile: StudentProfile) => void;
   onClose: () => void;
 }) {
@@ -167,6 +180,7 @@ function SkillQuickAddForm({
       }}
     >
       <div className="space-y-3 px-6 pb-4">
+        <SuggestedEvidenceHint names={suggestionNames} />
         <label className="block space-y-1.5">
           <span className="text-xs font-medium">Skill</span>
           <input
@@ -190,12 +204,14 @@ function CourseQuickAddForm({
   profile,
   certification,
   presetNames,
+  suggestionNames,
   onChange,
   onClose,
 }: {
   profile: StudentProfile;
   certification: boolean;
   presetNames: string[];
+  suggestionNames: string[];
   onChange: (profile: StudentProfile) => void;
   onClose: () => void;
 }) {
@@ -255,7 +271,11 @@ function CourseQuickAddForm({
           />
         </label>
         <StatusSelect status={status} onChange={setStatus} />
-        <EvidenceField value={skillsText} onChange={setSkillsText} />
+        <EvidenceField
+          value={skillsText}
+          suggestionNames={suggestionNames}
+          onChange={setSkillsText}
+        />
       </div>
       <FormActions
         disabled={!title.trim() || !skillsText.trim()}
@@ -269,12 +289,14 @@ function ExperienceQuickAddForm({
   profile,
   project,
   presetNames,
+  suggestionNames,
   onChange,
   onClose,
 }: {
   profile: StudentProfile;
   project: boolean;
   presetNames: string[];
+  suggestionNames: string[];
   onChange: (profile: StudentProfile) => void;
   onClose: () => void;
 }) {
@@ -345,7 +367,11 @@ function ExperienceQuickAddForm({
           />
         </label>
         <StatusSelect status={status} onChange={setStatus} />
-        <EvidenceField value={skillsText} onChange={setSkillsText} />
+        <EvidenceField
+          value={skillsText}
+          suggestionNames={suggestionNames}
+          onChange={setSkillsText}
+        />
       </div>
       <FormActions
         disabled={!title.trim() || !skillsText.trim()}
@@ -380,23 +406,40 @@ function StatusSelect({
   );
 }
 
+function SuggestedEvidenceHint({ names }: { names: string[] }) {
+  if (names.length === 0) {
+    return null;
+  }
+
+  return (
+    <p className="text-xs leading-relaxed text-muted-foreground">
+      Suggested evidence: {names.join(" · ")}
+    </p>
+  );
+}
+
 function EvidenceField({
   value,
+  suggestionNames,
   onChange,
 }: {
   value: string;
+  suggestionNames: string[];
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="block space-y-1.5">
-      <span className="text-xs font-medium">Evidence</span>
-      <input
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder="Skills, separated by commas"
-        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-      />
-    </label>
+    <div className="space-y-1.5">
+      <SuggestedEvidenceHint names={suggestionNames} />
+      <label className="block space-y-1.5">
+        <span className="text-xs font-medium">Evidence</span>
+        <input
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder="Skills, separated by commas"
+          className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+        />
+      </label>
+    </div>
   );
 }
 

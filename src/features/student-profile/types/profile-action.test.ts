@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   profileActionForSuggestedEvidence,
+  quickAddPrefillSkillIds,
   quickAddSkillContext,
 } from "./profile-action";
 
@@ -16,6 +17,26 @@ describe("quickAddSkillContext", () => {
     expect(
       quickAddSkillContext(["frontend-development", "deployment"]),
     ).toBe("multiple");
+  });
+});
+
+describe("quickAddPrefillSkillIds", () => {
+  it("prefills only when there is exactly one contextual skill", () => {
+    expect(quickAddPrefillSkillIds(["software-testing"])).toEqual([
+      "software-testing",
+    ]);
+    expect(quickAddPrefillSkillIds([])).toEqual([]);
+    expect(quickAddPrefillSkillIds(undefined)).toEqual([]);
+  });
+
+  it("does not prefill every recommendation suggestion", () => {
+    expect(
+      quickAddPrefillSkillIds([
+        "react",
+        "typescript",
+        "software-testing",
+      ]),
+    ).toEqual([]);
   });
 });
 

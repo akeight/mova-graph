@@ -49,6 +49,13 @@ export function quickAddSkillContext(
   return "multiple";
 }
 
+export function quickAddPrefillSkillIds(
+  skillIds?: string[],
+): string[] {
+  const ids = contextualSkillIds(skillIds);
+  return ids.length === 1 && ids[0] ? [ids[0]] : [];
+}
+
 export function profileActionForSuggestedEvidence(
   skillIds: string[],
 ): ProfileAction {

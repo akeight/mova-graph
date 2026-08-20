@@ -455,10 +455,32 @@ export function MovaGraph({
               isFocusMode
               onNodeActivate={
                 onNodeActivate
-                  ? (node) =>
-                      onNodeActivate(
-                        resolveGraphNodeAction(node),
-                      )
+                  ? (node) => {
+                      const action =
+                        resolveGraphNodeAction(
+                          node,
+                        );
+
+                      if (
+                        action.type ===
+                        "none"
+                      ) {
+                        return;
+                      }
+
+                      setIsFocusModeOpen(
+                        false,
+                      );
+
+                      window.setTimeout(
+                        () => {
+                          onNodeActivate(
+                            action,
+                          );
+                        },
+                        100,
+                      );
+                    }
                   : undefined
               }
             />

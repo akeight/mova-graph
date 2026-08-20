@@ -64,7 +64,7 @@ function drawerCopy(action: ProfileAction | null, profile: StudentProfile) {
     if (names.length > 1) {
       return {
         title: "Add evidence",
-        description: `Suggested evidence: ${names.join(", ")}.`,
+        description: `Suggested evidence: ${names.join(" · ")}.`,
       };
     }
 

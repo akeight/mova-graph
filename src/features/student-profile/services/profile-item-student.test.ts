@@ -7,6 +7,8 @@ import {
   import type { StudentProfile } from
     "../types/student-profile";
   
+  import { quickAddPrefillSkillIds } from "../types/profile-action";
+
   import {
     addProfileItem,
     removeProfileItem,
@@ -377,6 +379,32 @@ import {
       expect(result.experiences.at(-1)?.skillIds).toEqual(["software-testing"]);
       expect(result.experiences.at(-1)?.skillIds).not.toContain(
         "software-quality",
+      );
+    });
+
+    it("does not persist every recommended suggestion when the student types one skill", () => {
+      const suggested = [
+        "react",
+        "typescript",
+        "software-testing",
+      ];
+      const prefillIds = quickAddPrefillSkillIds(suggested);
+      const skillNames =
+        prefillIds.length > 0 ? prefillIds : ["React"];
+
+      const result = addProfileItem(profile, {
+        kind: "experience",
+        title: "Portfolio site",
+        status: "completed",
+        skillNames,
+        experienceKind: "project",
+      }, () => "experience-new");
+
+      expect(prefillIds).toEqual([]);
+      expect(result.experiences.at(-1)?.skillIds).toContain("react");
+      expect(result.experiences.at(-1)?.skillIds).not.toContain("typescript");
+      expect(result.experiences.at(-1)?.skillIds).not.toContain(
+        "software-testing",
       );
     });
   });
