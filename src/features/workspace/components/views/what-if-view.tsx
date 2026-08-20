@@ -11,6 +11,7 @@ import type { StudentProfile } from
   "@/features/student-profile/types/student-profile";
 
 import type { WorkspaceView } from "../../types/workspace-view";
+import { whatIfMode } from "./what-if-mode";
 
 type WhatIfViewProps = {
   profile: StudentProfile;
@@ -27,6 +28,8 @@ export function WhatIfView({
   onClear,
   onNavigate,
 }: WhatIfViewProps) {
+  const mode = whatIfMode(scenario);
+
   return (
     <div className="space-y-6">
       <header className="space-y-1">
@@ -40,7 +43,7 @@ export function WhatIfView({
         </p>
       </header>
 
-      {scenario ? (
+      {mode === "recommendation" && scenario ? (
         <>
           <ScenarioPreview
             roleTitle={role.title}
@@ -56,13 +59,13 @@ export function WhatIfView({
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </button>
         </>
-      ) : null}
-
-      <OpportunityWhatIfFlow
-        profile={profile}
-        role={role}
-        onAnalyzeStart={onClear}
-      />
+      ) : (
+        <OpportunityWhatIfFlow
+          profile={profile}
+          role={role}
+          onAnalyzeStart={onClear}
+        />
+      )}
     </div>
   );
 }

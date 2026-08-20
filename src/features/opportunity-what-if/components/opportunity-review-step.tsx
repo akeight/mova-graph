@@ -125,7 +125,7 @@ export function OpportunityReviewStep({
                 </div>
                 {skill.normalizationMethod === "unmapped" ? (
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Not yet mapped to a MOVa career evidence category
+                    Not yet mapped to a Mova career evidence category
                   </p>
                 ) : skill.evidence ? (
                   <p className="mt-1 text-xs text-muted-foreground">
