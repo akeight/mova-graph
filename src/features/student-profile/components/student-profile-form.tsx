@@ -12,13 +12,13 @@ import type {
   CourseProgress,
   ExperienceProgress,
   StudentProfile,
-  StudentSkill,
 } from "../types/student-profile";
 
 import { SkillManagementPanel } from
   "./skill-management-panel";
 
 import {
+  addProfileItem,
   getProfileItemSkillNames,
   removeProfileItem,
   updateProfileItem,
@@ -29,87 +29,21 @@ import {
   type ProfileItemDraft,
 } from "./editable-profile-item-card";
 
-import { reconcileProfileSkills } from
-  "../utils/reconcile-profile-skills";
-
 import { PROFILE_ITEM_DESCRIPTION_MAX } from
   "../constants";
-
-import { getSkillContributionStatus } from
-  "../utils/profile-item-status";
-
-import {
-  normalizeEvidenceNames,
-} from "@/features/goals/services/normalize-evidence";
 
 type StudentProfileFormProps = {
   profile: StudentProfile;
   onChange: (profile: StudentProfile) => void;
   onRestoreDemo: () => void;
+  onManageEvidence?: (skillId: string) => void;
 };
-
-function createId(prefix: string): string {
-  return `${prefix}-${crypto.randomUUID()}`;
-}
-
-function parseSkillInput(
-  value: string,
-) {
-  return normalizeEvidenceNames(
-    value
-      .split(",")
-      .map((skill) => skill.trim())
-      .filter(Boolean),
-  );
-}
-
-function mergeNormalizedSkills(
-  currentSkills: StudentSkill[],
-  incomingSkills: Array<{
-    id: string;
-    name: string;
-  }>,
-  status: StudentSkill["status"],
-): StudentSkill[] {
-  const skills = new Map(
-    currentSkills.map((skill) => [
-      skill.id,
-      skill,
-    ]),
-  );
-
-  for (const incoming of incomingSkills) {
-    const existingSkill =
-      skills.get(incoming.id);
-
-      skills.set(incoming.id, {
-        id: incoming.id,
-        name:
-          existingSkill?.name ??
-          incoming.name,
-
-        status:
-          existingSkill?.status ===
-            "demonstrated" ||
-          status === "demonstrated"
-            ? "demonstrated"
-            : "developing",
-
-        ...(existingSkill?.selfReported
-          ? { selfReported: true as const }
-          : {}),
-      });
-  }
-
-  return Array.from(
-    skills.values(),
-  );
-}
 
 export function StudentProfileForm({
   profile,
   onChange,
   onRestoreDemo,
+  onManageEvidence,
 }: StudentProfileFormProps) {
   const [
     courseTitle,
@@ -156,58 +90,23 @@ export function StudentProfileForm({
   ] = useState("");
 
   const addCourse = () => {
-    const normalizedSkills =
-      parseSkillInput(courseSkills);
+    const skillNames = courseSkills
+      .split(",")
+      .map((skill) => skill.trim())
+      .filter(Boolean);
 
-    if (
-      !courseTitle.trim() ||
-      normalizedSkills.length === 0
-    ) {
+    if (!courseTitle.trim() || skillNames.length === 0) {
       return;
     }
 
-    const skillIds =
-      normalizedSkills.map(
-        (skill) => skill.id,
-      );
-
-    const contributionStatus =
-      getSkillContributionStatus(
-        courseStatus,
-      );
-
-    const updatedProfile: StudentProfile = {
-      ...profile,
-
-      courses: [
-        ...profile.courses,
-        {
-          id: createId("course"),
-          title:
-            courseTitle.trim(),
-
-          description:
-            courseDescription.trim() ||
-            undefined,
-
-          status: courseStatus,
-          skillIds,
-        },
-      ],
-
-      skills: contributionStatus
-        ? mergeNormalizedSkills(
-            profile.skills,
-            normalizedSkills,
-            contributionStatus,
-          )
-        : profile.skills,
-    };
-
     onChange(
-      reconcileProfileSkills(
-        updatedProfile,
-      ),
+      addProfileItem(profile, {
+        kind: "course",
+        title: courseTitle,
+        description: courseDescription,
+        status: courseStatus,
+        skillNames,
+      }),
     );
 
     setCourseTitle("");
@@ -217,73 +116,29 @@ export function StudentProfileForm({
   };
 
   const addExperience = () => {
-    const normalizedSkills =
-      parseSkillInput(
-        experienceSkills,
-      );
+    const skillNames = experienceSkills
+      .split(",")
+      .map((skill) => skill.trim())
+      .filter(Boolean);
 
-    if (
-      !experienceTitle.trim() ||
-      normalizedSkills.length === 0
-    ) {
+    if (!experienceTitle.trim() || skillNames.length === 0) {
       return;
     }
 
-    const skillIds =
-      normalizedSkills.map(
-        (skill) => skill.id,
-      );
-
-    const contributionStatus =
-      getSkillContributionStatus(
-        experienceStatus,
-      );
-
-    const updatedProfile: StudentProfile = {
-      ...profile,
-
-      experiences: [
-        ...profile.experiences,
-        {
-          id: createId(
-            "experience",
-          ),
-
-          title:
-            experienceTitle.trim(),
-
-          description:
-            experienceDescription.trim() ||
-            undefined,
-
-          status:
-            experienceStatus,
-
-          skillIds,
-        },
-      ],
-
-      skills: contributionStatus
-        ? mergeNormalizedSkills(
-            profile.skills,
-            normalizedSkills,
-            contributionStatus,
-          )
-        : profile.skills,
-    };
-
     onChange(
-      reconcileProfileSkills(
-        updatedProfile,
-      ),
+      addProfileItem(profile, {
+        kind: "experience",
+        title: experienceTitle,
+        description: experienceDescription,
+        status: experienceStatus,
+        skillNames,
+      }),
     );
 
     setExperienceTitle("");
     setExperienceDescription("");
     setExperienceSkills("");
-    setExperienceStatus(
-      "completed",
-    );
+    setExperienceStatus("completed");
   };
 
   const handleCourseSave = (
@@ -690,6 +545,7 @@ export function StudentProfileForm({
       <SkillManagementPanel
         profile={profile}
         onChange={onChange}
+        onManageEvidence={onManageEvidence}
       />
     </aside>
   );

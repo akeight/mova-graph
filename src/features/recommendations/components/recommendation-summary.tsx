@@ -20,6 +20,7 @@ import {
     onSimulate: (
       recommendation: NextMoveRecommendation,
     ) => void;
+    onAddEvidence?: (skillIds: string[]) => void;
   };
   
   const priorityConfig: Record<
@@ -56,6 +57,7 @@ import {
     recommendations,
     activeRecommendationId,
     onSimulate,
+    onAddEvidence,
   }: RecommendationSummaryProps) {
     if (recommendations.length === 0) {
       return (
@@ -182,29 +184,44 @@ import {
             </span>
           </div>
   
-          <button
-            type="button"
-            onClick={() =>
-              onSimulate(bestRecommendation)
-            }
-            aria-pressed={isBestRecommendationActive}
-            className={cn(
-              "mt-4 inline-flex items-center gap-2 rounded-lg px-4 py-2",
-              "text-sm font-semibold transition-colors",
-              isBestRecommendationActive
-                ? "bg-highlight text-white hover:bg-highlight/90"
-                : "bg-primary text-primary-foreground hover:bg-primary/90",
-            )}
-          >
-            <FlaskConical
-              className="h-4 w-4"
-              aria-hidden="true"
-            />
-  
-            {isBestRecommendationActive
-              ? "Previewing impact"
-              : "Preview impact"}
-          </button>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {onAddEvidence ? (
+              <button
+                type="button"
+                onClick={() =>
+                  onAddEvidence(
+                    bestRecommendation.suggestedEvidenceSkillIds,
+                  )
+                }
+                className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold hover:bg-muted"
+              >
+                Add evidence
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={() =>
+                onSimulate(bestRecommendation)
+              }
+              aria-pressed={isBestRecommendationActive}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-lg px-4 py-2",
+                "text-sm font-semibold transition-colors",
+                isBestRecommendationActive
+                  ? "bg-highlight text-white hover:bg-highlight/90"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90",
+              )}
+            >
+              <FlaskConical
+                className="h-4 w-4"
+                aria-hidden="true"
+              />
+
+              {isBestRecommendationActive
+                ? "Previewing impact"
+                : "Preview impact"}
+            </button>
+          </div>
         </article>
   
         {otherRecommendations.length > 0 ? (
@@ -279,30 +296,45 @@ import {
                       </span>
                     </div>
   
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onSimulate(recommendation)
-                      }
-                      aria-pressed={isActive}
-                      className={cn(
-                        "mt-4 inline-flex w-full items-center justify-center gap-2",
-                        "rounded-lg border px-3 py-2 text-sm font-medium",
-                        "transition-colors",
-                        isActive
-                          ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/15"
-                          : "hover:bg-muted",
-                      )}
-                    >
-                      <FlaskConical
-                        className="h-4 w-4"
-                        aria-hidden="true"
-                      />
-  
-                      {isActive
-                        ? "Previewing impact"
-                        : "Preview impact"}
-                    </button>
+                    <div className="mt-4 flex flex-col gap-2">
+                      {onAddEvidence ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onAddEvidence(
+                              recommendation.suggestedEvidenceSkillIds,
+                            )
+                          }
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium hover:bg-muted"
+                        >
+                          Add evidence
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onSimulate(recommendation)
+                        }
+                        aria-pressed={isActive}
+                        className={cn(
+                          "inline-flex w-full items-center justify-center gap-2",
+                          "rounded-lg border px-3 py-2 text-sm font-medium",
+                          "transition-colors",
+                          isActive
+                            ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/15"
+                            : "hover:bg-muted",
+                        )}
+                      >
+                        <FlaskConical
+                          className="h-4 w-4"
+                          aria-hidden="true"
+                        />
+
+                        {isActive
+                          ? "Previewing impact"
+                          : "Preview impact"}
+                      </button>
+                    </div>
                   </article>
                 );
               })}

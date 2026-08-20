@@ -34,6 +34,8 @@ type SkillManagementPanelProps = {
   onChange: (
     profile: StudentProfile,
   ) => void;
+
+  onManageEvidence?: (skillId: string) => void;
 };
 
 const statusConfig: Record<
@@ -75,6 +77,7 @@ const statusConfig: Record<
 export function SkillManagementPanel({
   profile,
   onChange,
+  onManageEvidence,
 }: SkillManagementPanelProps) {
   const [editingSkillId, setEditingSkillId] =
     useState<string | null>(null);
@@ -337,10 +340,6 @@ export function SkillManagementPanel({
                   ) : null}
                 </div>
 
-                <p className="mt-1 break-all text-[10px] text-muted-foreground">
-                  {skill.id}
-                </p>
-
                 {skill.sources.length > 0 ? (
                   <div className="mt-3 space-y-1.5">
                     <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
@@ -405,6 +404,17 @@ export function SkillManagementPanel({
               </div>
 
               <div className="flex shrink-0 items-center gap-1">
+                {onManageEvidence ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onManageEvidence(skill.id)
+                    }
+                    className="rounded-md px-2 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                  >
+                    Manage evidence
+                  </button>
+                ) : null}
                 {skill.selfReported &&
                 skill.sources.length > 0 ? (
                   <button

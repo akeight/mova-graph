@@ -10,6 +10,7 @@ import type { RecommendationScenarioResult } from "@/features/scenario-simulator
 import type { StudentProfile } from
   "@/features/student-profile/types/student-profile";
 
+import { PathContinueNav } from "../path-continue-nav";
 import type { WorkspaceView } from "../../types/workspace-view";
 import { whatIfMode } from "./what-if-mode";
 
@@ -19,6 +20,7 @@ type WhatIfViewProps = {
   scenario: RecommendationScenarioResult | null;
   onClear: () => void;
   onNavigate: (view: WorkspaceView) => void;
+  onAddEvidence: () => void;
 };
 
 export function WhatIfView({
@@ -27,20 +29,29 @@ export function WhatIfView({
   scenario,
   onClear,
   onNavigate,
+  onAddEvidence,
 }: WhatIfViewProps) {
   const mode = whatIfMode(scenario);
 
   return (
     <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          What If?
-        </h1>
+      <header className="space-y-3">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            What If?
+          </h1>
 
-        <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          See how completing an opportunity could change your readiness
-          for {role.title}. Nothing here changes your saved profile.
-        </p>
+          <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
+            See how completing an opportunity could change your readiness
+            for {role.title}. Nothing here changes your saved profile.
+          </p>
+        </div>
+
+        <PathContinueNav
+          current="what-if"
+          onNavigate={onNavigate}
+          onAddEvidence={onAddEvidence}
+        />
       </header>
 
       {mode === "recommendation" && scenario ? (

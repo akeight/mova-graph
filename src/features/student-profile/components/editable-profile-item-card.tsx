@@ -47,6 +47,7 @@ type EditableProfileItemCardProps = {
   kind: "course" | "experience";
   item: EditableItem;
   skillNames: string[];
+  startInEditMode?: boolean;
 
   onSave: (
     draft: ProfileItemDraft,
@@ -108,11 +109,12 @@ export function EditableProfileItemCard({
   kind,
   item,
   skillNames,
+  startInEditMode = false,
   onSave,
   onDelete,
 }: EditableProfileItemCardProps) {
   const [isEditing, setIsEditing] =
-    useState(false);
+    useState(startInEditMode);
 
   const [title, setTitle] =
     useState(item.title);

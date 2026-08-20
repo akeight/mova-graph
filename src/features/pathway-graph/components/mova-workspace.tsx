@@ -51,9 +51,17 @@ import { applyApprovedProfileItem } from
   "@/features/skill-analysis/services/apply-profile-item-extraction";
 import type { ApprovedProfileItem } from
   "@/features/skill-analysis/types/profile-item-extraction";
+import { ProfileExtractionReview } from
+  "@/features/skill-analysis/components/profile-extraction-review";
 
 import type { StudentProfile } from
   "@/features/student-profile/types/student-profile";
+import type { ProfileAction } from
+  "@/features/student-profile/types/profile-action";
+import { profileActionForSuggestedEvidence } from
+  "@/features/student-profile/types/profile-action";
+import { ProfileActionDrawer } from
+  "@/features/student-profile/components/profile-action-drawer";
 import { createEmptyProfile } from
   "@/features/student-profile/utils/create-empty-profile";
 import { reconcileProfileSkills } from
@@ -77,6 +85,17 @@ import {
   DEFAULT_WORKSPACE_VIEW,
   type WorkspaceView,
 } from "@/features/workspace/types/workspace-view";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+import type { GraphNodeAction } from
+  "../builders/resolve-graph-node-action";
 
 import { sampleStudentProfile } from
   "../data/sample-student";
@@ -162,6 +181,12 @@ export function MovaWorkspace({
     useState<WorkspaceView>(
       DEFAULT_WORKSPACE_VIEW,
     );
+
+  const [profileAction, setProfileAction] =
+    useState<ProfileAction | null>(null);
+
+  const [aiAssistantOpen, setAiAssistantOpen] =
+    useState(false);
 
   const [onboarding, setOnboarding] =
     useState<OnboardingState>(
@@ -293,6 +318,13 @@ export function MovaWorkspace({
         handleWorkspaceHydrate,
     });
 
+  const handleNavigate = (
+    view: WorkspaceView,
+  ) => {
+    setActiveView(view);
+    setProfileAction(null);
+  };
+
   const handleProfileChange = (
     nextProfile: StudentProfile,
   ) => {
@@ -301,6 +333,54 @@ export function MovaWorkspace({
     setActiveRecommendationId(
       null,
     );
+  };
+
+  const handleAddEvidence = (
+    skillIds?: string[],
+  ) => {
+    if (!skillIds || skillIds.length === 0) {
+      setProfileAction({ mode: "quick-add" });
+      return;
+    }
+
+    setProfileAction(
+      profileActionForSuggestedEvidence(skillIds),
+    );
+  };
+
+  const handleSkillEvidence = (
+    skillId: string,
+    intent: "add" | "manage" = "manage",
+  ) => {
+    setProfileAction({
+      mode: "manage-skill-evidence",
+      skillId,
+      intent,
+    });
+  };
+
+  const handleNodeActivate = (
+    action: GraphNodeAction,
+  ) => {
+    if (action.type === "none") {
+      return;
+    }
+
+    if (action.type === "navigate") {
+      handleNavigate(action.view);
+      return;
+    }
+
+    if (action.type === "edit-activity") {
+      setProfileAction({
+        mode: "edit-activity",
+        itemKind: action.itemKind,
+        itemId: action.itemId,
+      });
+      return;
+    }
+
+    handleSkillEvidence(action.skillId, "manage");
   };
 
   const handleRoleSelect = (
@@ -326,7 +406,7 @@ export function MovaWorkspace({
           recommendation.id;
 
         if (!isTogglingOff) {
-          setActiveView("what-if");
+          handleNavigate("what-if");
         }
 
         return isTogglingOff
@@ -378,6 +458,7 @@ export function MovaWorkspace({
     );
 
     setActiveView(DEFAULT_WORKSPACE_VIEW);
+    setProfileAction(null);
   };
   
   if (
@@ -442,7 +523,7 @@ export function MovaWorkspace({
   return (
     <WorkspaceShell
       activeView={activeView}
-      onNavigate={setActiveView}
+      onNavigate={handleNavigate}
       saveStatus={persistence.status}
       lastSavedAt={
         persistence.lastSavedAt
@@ -464,7 +545,7 @@ export function MovaWorkspace({
           recommendations={
             recommendations
           }
-          onNavigate={setActiveView}
+          onNavigate={handleNavigate}
         />
       ) : null}
 
@@ -478,6 +559,8 @@ export function MovaWorkspace({
           isScenarioPreview={
             activeScenario !== null
           }
+          onNavigate={handleNavigate}
+          onNodeActivate={handleNodeActivate}
         />
       ) : null}
 
@@ -487,6 +570,15 @@ export function MovaWorkspace({
           assessment={
             readinessAssessment
           }
+          onNavigate={handleNavigate}
+          onAddEvidence={(skillId) => {
+            if (skillId) {
+              handleSkillEvidence(skillId, "add");
+              return;
+            }
+
+            handleAddEvidence();
+          }}
         />
       ) : null}
 
@@ -502,6 +594,8 @@ export function MovaWorkspace({
             activeRecommendationId
           }
           onSimulate={handleSimulate}
+          onNavigate={handleNavigate}
+          onAddEvidence={handleAddEvidence}
         />
       ) : null}
 
@@ -515,7 +609,10 @@ export function MovaWorkspace({
               null,
             )
           }
-          onNavigate={setActiveView}
+          onNavigate={handleNavigate}
+          onAddEvidence={() =>
+            handleAddEvidence()
+          }
         />
       ) : null}
 
@@ -529,8 +626,45 @@ export function MovaWorkspace({
           onAddExtractedItem={
             handleAddExtractedItem
           }
+          onManageEvidence={(skillId) =>
+            handleSkillEvidence(skillId, "manage")
+          }
         />
       ) : null}
+
+      <ProfileActionDrawer
+        action={profileAction}
+        profile={profile}
+        onProfileChange={handleProfileChange}
+        onActionChange={setProfileAction}
+        onOpenAiAssistant={() =>
+          setAiAssistantOpen(true)
+        }
+      />
+
+      <Dialog
+        open={aiAssistantOpen}
+        onOpenChange={setAiAssistantOpen}
+      >
+        <DialogContent
+          className="max-h-[90vh] overflow-y-auto sm:max-w-3xl"
+        >
+          <DialogHeader>
+            <DialogTitle>AI profile assistant</DialogTitle>
+            <DialogDescription>
+              Describe a course or experience. Review every suggestion
+              before adding it to your Mova profile.
+            </DialogDescription>
+          </DialogHeader>
+          <ProfileExtractionReview
+            onAdd={(item) => {
+              handleAddExtractedItem(item);
+              setAiAssistantOpen(false);
+              setProfileAction(null);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </WorkspaceShell>
   );
 }

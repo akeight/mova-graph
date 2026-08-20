@@ -18,11 +18,30 @@ export type MovaNodeStatus =
   | "recommended"
   | "scenario";
 
+export type MovaNodeSource =
+  | {
+      kind: "course" | "experience";
+      itemId: string;
+    }
+  | {
+      kind: "skill";
+      skillId: string;
+    }
+  | {
+      kind: "competency";
+      competencyId: string;
+    }
+  | {
+      kind: "recommendation";
+      recommendationId: string;
+    };
+
 export type MovaNodeData = {
   label: string;
   category: MovaNodeCategory;
   status?: MovaNodeStatus;
   description?: string;
+  source?: MovaNodeSource;
 };
 
 export type MovaNode = Node<MovaNodeData, "mova">;

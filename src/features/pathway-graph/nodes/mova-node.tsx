@@ -141,6 +141,8 @@ export function MovaNodeCard({
       className={cn(
         "relative flex h-[136px] w-64 flex-col rounded-2xl border-2 bg-background p-4 text-foreground shadow-sm transition-shadow",
         category.borderClassName,
+        data.source &&
+          "cursor-pointer",
         selected &&
           "ring-2 ring-primary/40 ring-offset-2 ring-offset-background",
       )}
