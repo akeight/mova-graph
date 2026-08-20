@@ -36,8 +36,11 @@ describe("buildStudentGraph", () => {
 
     for (const recommendation of recommendations) {
       expect(
-        graph.nodes.find((node) => node.id === recommendation.id),
-      ).toBeDefined();
+        graph.nodes.find((node) => node.id === recommendation.id)?.data.source,
+      ).toEqual({
+        kind: "recommendation",
+        recommendationId: recommendation.id,
+      });
 
       expect(
         graph.edges.find(
@@ -63,11 +66,33 @@ describe("buildStudentGraph", () => {
       );
 
       expect(node?.data.category).toBe("competency");
+      expect(node?.data.source).toEqual({
+        kind: "competency",
+        competencyId: competency.competencyId,
+      });
 
       if (competency.displayStatus === "not-explored") {
         expect(node?.data.status).toBe("not-explored");
       }
     }
+  });
+
+  it("attaches profile item source metadata to activity and skill nodes", () => {
+    const role = getCareerRole(defaultCareerRoleId);
+    const graph = buildStudentGraph(sampleStudentProfile, role);
+    const course = graph.nodes.find(
+      (node) => node.id === "course-web-development",
+    );
+    const skill = graph.nodes.find((node) => node.id === "skill-react");
+
+    expect(course?.data.source).toEqual({
+      kind: "course",
+      itemId: "web-development",
+    });
+    expect(skill?.data.source).toEqual({
+      kind: "skill",
+      skillId: "react",
+    });
   });
 
   it("does not add recommendation nodes when none are supplied", () => {

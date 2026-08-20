@@ -7,7 +7,10 @@ import {
   import type { StudentProfile } from
     "../types/student-profile";
   
+  import { quickAddPrefillSkillIds } from "../types/profile-action";
+
   import {
+    addProfileItem,
     removeProfileItem,
     updateProfileItem,
   } from "./profile-item-service";
@@ -235,6 +238,70 @@ import {
       expect(result.experiences[0]?.endDate).toBeUndefined();
     });
 
+    it("marks linked skills demonstrated when an in-progress item is completed", () => {
+      const inProgress = updateProfileItem(profile, {
+        kind: "experience",
+        itemId: "experience-1",
+        title: "Mobile Project",
+        status: "in-progress",
+        skillNames: ["Mobile Development"],
+      });
+
+      expect(
+        inProgress.skills.find((skill) => skill.id === "mobile-development")
+          ?.status,
+      ).toBe("developing");
+
+      const completed = updateProfileItem(inProgress, {
+        kind: "experience",
+        itemId: "experience-1",
+        title: "Mobile Project",
+        status: "completed",
+        skillNames: ["Mobile Development"],
+      });
+
+      expect(
+        completed.skills.find((skill) => skill.id === "mobile-development")
+          ?.status,
+      ).toBe("demonstrated");
+    });
+
+    it("returns a skill to developing when completed evidence is set in-progress", () => {
+      const completed = updateProfileItem(profile, {
+        kind: "experience",
+        itemId: "experience-1",
+        title: "Mobile Project",
+        status: "completed",
+        skillNames: ["React"],
+      });
+
+      expect(
+        completed.skills.find((skill) => skill.id === "react")?.status,
+      ).toBe("demonstrated");
+
+      const inProgress = updateProfileItem(completed, {
+        kind: "experience",
+        itemId: "experience-1",
+        title: "Mobile Project",
+        status: "in-progress",
+        skillNames: ["React"],
+      });
+
+      expect(
+        inProgress.skills.find((skill) => skill.id === "react")?.status,
+      ).toBe("demonstrated");
+
+      const withoutCourse = removeProfileItem(
+        inProgress,
+        "course",
+        "course-1",
+      );
+
+      expect(
+        withoutCourse.skills.find((skill) => skill.id === "react")?.status,
+      ).toBe("developing");
+    });
+
     it("preserves organization and dates when those fields are omitted", () => {
       const seeded = updateProfileItem(profile, {
         kind: "experience",
@@ -264,6 +331,84 @@ import {
     });
   });
   
+  describe("addProfileItem", () => {
+    it("creates a project experience with kind=project and expanded evidence", () => {
+      const result = addProfileItem(profile, {
+        kind: "experience",
+        title: "HackHQ",
+        status: "completed",
+        skillNames: ["Software Testing"],
+        experienceKind: "project",
+      }, () => "experience-new");
+
+      expect(result.experiences.at(-1)).toMatchObject({
+        id: "experience-new",
+        title: "HackHQ",
+        status: "completed",
+        kind: "project",
+        skillIds: ["software-testing"],
+      });
+    });
+
+    it("creates a certification course with kind=certification", () => {
+      const result = addProfileItem(profile, {
+        kind: "course",
+        title: "AWS Cloud Practitioner",
+        status: "completed",
+        skillNames: ["AWS"],
+        courseKind: "certification",
+      }, () => "course-new");
+
+      expect(result.courses.at(-1)).toMatchObject({
+        id: "course-new",
+        title: "AWS Cloud Practitioner",
+        kind: "certification",
+        skillIds: ["aws", "cloud-platform"],
+      });
+    });
+
+    it("preselects a canonical evidence skill without storing a competency id", () => {
+      const result = addProfileItem(profile, {
+        kind: "experience",
+        title: "Testing project",
+        status: "completed",
+        skillNames: ["Software Testing"],
+        experienceKind: "project",
+      }, () => "experience-new");
+
+      expect(result.experiences.at(-1)?.skillIds).toEqual(["software-testing"]);
+      expect(result.experiences.at(-1)?.skillIds).not.toContain(
+        "software-quality",
+      );
+    });
+
+    it("does not persist every recommended suggestion when the student types one skill", () => {
+      const suggested = [
+        "react",
+        "typescript",
+        "software-testing",
+      ];
+      const prefillIds = quickAddPrefillSkillIds(suggested);
+      const skillNames =
+        prefillIds.length > 0 ? prefillIds : ["React"];
+
+      const result = addProfileItem(profile, {
+        kind: "experience",
+        title: "Portfolio site",
+        status: "completed",
+        skillNames,
+        experienceKind: "project",
+      }, () => "experience-new");
+
+      expect(prefillIds).toEqual([]);
+      expect(result.experiences.at(-1)?.skillIds).toContain("react");
+      expect(result.experiences.at(-1)?.skillIds).not.toContain("typescript");
+      expect(result.experiences.at(-1)?.skillIds).not.toContain(
+        "software-testing",
+      );
+    });
+  });
+
   describe("removeProfileItem", () => {
     it("permanently removes a course", () => {
       const result =

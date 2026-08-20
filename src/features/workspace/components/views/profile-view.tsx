@@ -20,6 +20,7 @@ type ProfileViewProps = {
   onAddExtractedItem: (
     item: ApprovedProfileItem,
   ) => void;
+  onManageEvidence?: (skillId: string) => void;
 };
 
 export function ProfileView({
@@ -27,6 +28,7 @@ export function ProfileView({
   onProfileChange,
   onRestoreDemo,
   onAddExtractedItem,
+  onManageEvidence,
 }: ProfileViewProps) {
   const [importing, setImporting] = useState(false);
 
@@ -85,6 +87,7 @@ export function ProfileView({
         profile={profile}
         onChange={onProfileChange}
         onRestoreDemo={onRestoreDemo}
+        onManageEvidence={onManageEvidence}
       />
     </div>
   );

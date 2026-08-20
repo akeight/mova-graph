@@ -118,6 +118,98 @@ function persistableDate(value: string | undefined): string | undefined {
   return trimmed;
 }
 
+export type ProfileItemCreate =
+  | {
+      kind: "course";
+      title: string;
+      description?: string;
+      status: CourseProgress;
+      skillNames: string[];
+      courseKind?: StudentCourse["kind"];
+    }
+  | {
+      kind: "experience";
+      title: string;
+      description?: string;
+      status: ExperienceProgress;
+      skillNames: string[];
+      experienceKind?: StudentExperience["kind"];
+      organization?: string;
+      startDate?: string;
+      endDate?: string;
+    };
+
+function createItemId(prefix: string): string {
+  return `${prefix}-${crypto.randomUUID()}`;
+}
+
+export function addProfileItem(
+  profile: StudentProfile,
+  create: ProfileItemCreate,
+  createId: (prefix: string) => string = createItemId,
+): StudentProfile {
+  const title = create.title.trim();
+  const normalizedSkills = normalizeEvidenceNames(create.skillNames);
+
+  if (!title) {
+    throw new Error("A profile item requires a title.");
+  }
+
+  if (normalizedSkills.length === 0) {
+    throw new Error("A profile item requires at least one skill.");
+  }
+
+  const skillIds = normalizedSkills.map((skill) => skill.id);
+  const description = create.description?.trim() || undefined;
+  const profileWithSkillMetadata = {
+    ...profile,
+    skills: mergeSkillMetadata(profile.skills, normalizedSkills),
+  };
+
+  if (create.kind === "course") {
+    return reconcileProfileSkills({
+      ...profileWithSkillMetadata,
+      courses: [
+        ...profile.courses,
+        {
+          id: createId("course"),
+          title,
+          description,
+          status: create.status,
+          skillIds,
+          ...(create.courseKind ? { kind: create.courseKind } : {}),
+        },
+      ],
+    });
+  }
+
+  return reconcileProfileSkills({
+    ...profileWithSkillMetadata,
+    experiences: [
+      ...profile.experiences,
+      {
+        id: createId("experience"),
+        title,
+        description,
+        status: create.status,
+        skillIds,
+        ...(create.experienceKind ? { kind: create.experienceKind } : {}),
+        ...(create.organization !== undefined
+          ? {
+              organization: create.organization.trim() || undefined,
+            }
+          : {}),
+        ...(create.startDate !== undefined
+          ? { startDate: persistableDate(create.startDate) }
+          : {}),
+        ...(create.endDate !== undefined
+          ? { endDate: persistableDate(create.endDate) }
+          : {}),
+      },
+    ],
+  });
+}
+
 export function updateProfileItem(
   profile: StudentProfile,
   update: ProfileItemUpdate,

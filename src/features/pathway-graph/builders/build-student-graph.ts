@@ -259,6 +259,10 @@ export function buildStudentGraph(
           category: "course",
           status: getCourseNodeStatus(activity.item.status),
           description: activity.item.description,
+          source: {
+            kind: "course",
+            itemId: activity.item.id,
+          },
         },
       });
 
@@ -315,6 +319,10 @@ export function buildStudentGraph(
                 "Projected completed experience",
             ].join(" ")
           : activity.item.description,
+        source: {
+          kind: "experience",
+          itemId: activity.item.id,
+        },
       },
     });
 
@@ -363,6 +371,10 @@ export function buildStudentGraph(
             : studentSkill
               ? "Developing student skill"
               : "Connected student skill",
+        source: {
+          kind: "skill",
+          skillId,
+        },
       },
     });
   });
@@ -387,6 +399,10 @@ export function buildStudentGraph(
               : "Specialized focus",
           competency.description,
         ].join(". "),
+        source: {
+          kind: "competency",
+          competencyId: competency.competencyId,
+        },
       },
     });
 
@@ -448,6 +464,10 @@ export function buildStudentGraph(
           recommendation.action,
           `Estimated impact: +${recommendation.estimatedScoreIncrease} readiness points.`,
         ].join(" "),
+        source: {
+          kind: "recommendation",
+          recommendationId: recommendation.id,
+        },
       },
     });
 

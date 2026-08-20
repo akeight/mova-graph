@@ -48,6 +48,10 @@ import type { StudentProfile } from
 
 import { buildStudentGraph } from
   "../builders/build-student-graph";
+import {
+  resolveGraphNodeAction,
+  type GraphNodeAction,
+} from "../builders/resolve-graph-node-action";
 
 import { layoutMovaGraph } from
   "../layout/layout-mova-graph";
@@ -80,18 +84,21 @@ type MovaGraphProps = {
   role: CareerRole;
   recommendations: NextMoveRecommendation[];
   isScenarioPreview?: boolean;
+  onNodeActivate?: (action: GraphNodeAction) => void;
 };
 
 type OpportunityMapCanvasProps = {
   graph: MovaGraphData;
   resetVersion: number;
   isFocusMode?: boolean;
+  onNodeActivate?: (node: MovaNode) => void;
 };
 
 function OpportunityMapCanvas({
   graph,
   resetVersion,
   isFocusMode = false,
+  onNodeActivate,
 }: OpportunityMapCanvasProps) {
   const [nodes, setNodes, onNodesChange] =
     useNodesState<MovaNode>(
@@ -195,6 +202,13 @@ function OpportunityMapCanvas({
         onEdgesChange={
           onEdgesChange
         }
+        onNodeClick={
+          onNodeActivate
+            ? (_event, node) => {
+                onNodeActivate(node);
+              }
+            : undefined
+        }
         onInit={(instance) => {
           reactFlowInstanceRef.current =
             instance;
@@ -237,6 +251,7 @@ export function MovaGraph({
   role,
   recommendations,
   isScenarioPreview = false,
+  onNodeActivate,
 }: MovaGraphProps) {
   const [isFocusModeOpen, setIsFocusModeOpen] =
     useState(false);
@@ -337,6 +352,14 @@ export function MovaGraph({
           resetVersion={
             resetVersion
           }
+          onNodeActivate={
+            onNodeActivate
+              ? (node) =>
+                  onNodeActivate(
+                    resolveGraphNodeAction(node),
+                  )
+              : undefined
+          }
         />
 
         <p className="text-xs leading-relaxed text-muted-foreground md:hidden">
@@ -430,6 +453,36 @@ export function MovaGraph({
                 resetVersion
               }
               isFocusMode
+              onNodeActivate={
+                onNodeActivate
+                  ? (node) => {
+                      const action =
+                        resolveGraphNodeAction(
+                          node,
+                        );
+
+                      if (
+                        action.type ===
+                        "none"
+                      ) {
+                        return;
+                      }
+
+                      setIsFocusModeOpen(
+                        false,
+                      );
+
+                      window.setTimeout(
+                        () => {
+                          onNodeActivate(
+                            action,
+                          );
+                        },
+                        100,
+                      );
+                    }
+                  : undefined
+              }
             />
           </div>
         </DialogContent>

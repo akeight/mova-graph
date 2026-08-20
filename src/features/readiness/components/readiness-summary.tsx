@@ -16,10 +16,12 @@ import type {
   DisplayStatus,
   ReadinessAssessment,
 } from "../types/readiness";
+import { getActionableGapEvidence } from "../services/gap-evidence-options";
 
 type ReadinessSummaryProps = {
   role: CareerRole;
   assessment: ReadinessAssessment;
+  onAddEvidence?: (skillId: string) => void;
 };
 
 const statusConfig: Record<
@@ -74,6 +76,7 @@ const TIER_COPY = {
 export function ReadinessSummary({
   role,
   assessment,
+  onAddEvidence,
 }: ReadinessSummaryProps) {
   const core = assessment.competencies.filter(
     (competency) => competency.tier === "core",
@@ -166,23 +169,26 @@ export function ReadinessSummary({
         title={TIER_COPY.core.title}
         hint={TIER_COPY.core.hint}
         competencies={core}
+        onAddEvidence={onAddEvidence}
       />
 
       <CompetencySection
         title={TIER_COPY.common.title}
         hint={TIER_COPY.common.hint}
         competencies={common}
+        onAddEvidence={onAddEvidence}
       />
 
       <CompetencySection
         title={TIER_COPY.specialized.title}
         hint={TIER_COPY.specialized.hint}
         competencies={specialized}
+        onAddEvidence={onAddEvidence}
       />
 
       <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
         Readiness is weighted coverage of core and common
-        competencies from evidence in your MOVa profile (60%
+        competencies from evidence in your Mova profile (60%
         average core coverage, 40% average common coverage).
         It is not a prediction of getting hired, a claim that
         every employer requires the same stack, or opportunity
@@ -198,10 +204,12 @@ function CompetencySection({
   title,
   hint,
   competencies,
+  onAddEvidence,
 }: {
   title: string;
   hint: string;
   competencies: CompetencyReadiness[];
+  onAddEvidence?: (skillId: string) => void;
 }) {
   return (
     <div className="mt-5 border-t pt-5">
@@ -219,41 +227,94 @@ function CompetencySection({
         {competencies.map((competency) => {
           const status = statusConfig[competency.displayStatus];
           const StatusIcon = status.icon;
+          const gapOptions = onAddEvidence
+            ? getActionableGapEvidence(competency)
+            : [];
 
           return (
             <article
               key={competency.competencyId}
-              className="flex items-center justify-between gap-3 rounded-xl border bg-background p-3"
+              className="space-y-3 rounded-xl border bg-background p-3"
             >
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium">
-                  {competency.competencyName}
-                </p>
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">
+                    {competency.competencyName}
+                  </p>
 
-                <p className="mt-1 text-xs capitalize text-muted-foreground">
-                  {competency.tier}
-                </p>
+                  <p className="mt-1 text-xs capitalize text-muted-foreground">
+                    {competency.tier}
+                  </p>
+                </div>
+
+                <span
+                  className={cn(
+                    "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
+                    status.className,
+                  )}
+                >
+                  <StatusIcon
+                    className="h-3.5 w-3.5"
+                    aria-hidden="true"
+                  />
+
+                  {status.label}
+                </span>
               </div>
 
-              <span
-                className={cn(
-                  "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
-                  status.className,
-                )}
-              >
-                <StatusIcon
-                  className="h-3.5 w-3.5"
-                  aria-hidden="true"
-                />
+              {gapOptions.length > 0 ? (
+                <div className="space-y-2 border-t pt-3">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                    Evidence that could satisfy this gap
+                  </p>
 
-                {status.label}
-              </span>
+                  {gapOptions.map((option) => (
+                    <div
+                      key={`${option.groupId}-${option.skillId}`}
+                      className="flex items-start justify-between gap-2"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium">
+                          {option.skillName}
+                        </p>
+                        {option.alternativeNames.length > 0 ? (
+                          <p className="mt-0.5 text-[11px] text-muted-foreground">
+                            or {formatAlternatives(option.alternativeNames)}
+                          </p>
+                        ) : null}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onAddEvidence?.(option.skillId)
+                        }
+                        className="shrink-0 rounded-md px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/10"
+                      >
+                        Add evidence
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </article>
           );
         })}
       </div>
     </div>
   );
+}
+
+function formatAlternatives(names: string[]): string {
+  if (names.length === 1) {
+    return names[0] ?? "";
+  }
+
+  if (names.length === 2) {
+    return `${names[0]} or ${names[1]}`;
+  }
+
+  return `${names.slice(0, -1).join(", ")}, or ${names.at(-1)}`;
 }
 
 type MetricProps = {

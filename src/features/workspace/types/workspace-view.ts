@@ -46,6 +46,18 @@ export const workspaceNavGroups: WorkspaceNavGroup[] = [
     ],
   },
   {
+    id: "profile",
+    label: "Your profile",
+    items: [
+      {
+        view: "profile",
+        label: "Profile",
+        description: "Edit your courses, experiences, and skills",
+        icon: UserRound,
+      },
+    ],
+  },
+  {
     id: "path",
     label: "Your path",
     items: [
@@ -72,18 +84,6 @@ export const workspaceNavGroups: WorkspaceNavGroup[] = [
         label: "What If?",
         description: "See how completing an opportunity changes readiness",
         icon: FlaskConical,
-      },
-    ],
-  },
-  {
-    id: "profile",
-    label: "Your profile",
-    items: [
-      {
-        view: "profile",
-        label: "Profile",
-        description: "Edit your courses, experiences, and skills",
-        icon: UserRound,
       },
     ],
   },
