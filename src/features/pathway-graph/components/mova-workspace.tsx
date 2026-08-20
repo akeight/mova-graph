@@ -507,9 +507,8 @@ export function MovaWorkspace({
 
       {activeView === "what-if" ? (
         <WhatIfView
-          roleTitle={
-            selectedRole.title
-          }
+          profile={profile}
+          role={selectedRole}
           scenario={activeScenario}
           onClear={() =>
             setActiveRecommendationId(
