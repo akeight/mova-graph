@@ -2,13 +2,17 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { createServerClient } from "@supabase/ssr";
 
-import { getSupabaseConfig } from "./config";
+import {
+  getPostLoginPath,
+  isPublicHtmlPath,
+  LOGIN_PATH,
+} from "@/lib/app-routes";
 
-const LOGIN_PATH = "/login";
+import { getSupabaseConfig } from "./config";
 
 /**
  * Refreshes the Supabase auth session on every request and applies optimistic
- * redirects between the login page and the protected app root.
+ * redirects between public pages and the protected workspace.
  *
  * IMPORTANT: This performs an optimistic cookie-based check only. The verified
  * user id is always re-derived from `auth.getUser()` in the data-access layer
@@ -52,7 +56,7 @@ export async function updateSession(request: NextRequest) {
 
   const isLoginRoute = pathname === LOGIN_PATH;
 
-  if (!user && !isLoginRoute) {
+  if (!user && !isPublicHtmlPath(pathname)) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = LOGIN_PATH;
 
@@ -61,7 +65,7 @@ export async function updateSession(request: NextRequest) {
 
   if (user && isLoginRoute) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/";
+    redirectUrl.pathname = getPostLoginPath();
 
     return NextResponse.redirect(redirectUrl);
   }

@@ -55,7 +55,7 @@ type OnboardingFlowProps = {
   onRoleSelect: (roleId: string) => void;
   onProfileChange: (profile: StudentProfile) => void;
   onAddExtractedItem: (item: ApprovedProfileItem) => void;
-  onRestoreDemo: () => void;
+  onRestoreDemo?: () => void;
   currentStep: OnboardingStep;
   onStepChange: (step: OnboardingStep) => void;
   onFinish: () => void;

@@ -28,6 +28,7 @@ type OpportunityInputStepProps = {
   sourceText: string;
   error: string | null;
   isAnalyzing: boolean;
+  sampleMode?: boolean;
   onTypeChange: (type: OpportunityType) => void;
   onTextChange: (text: string) => void;
   onAnalyze: () => void;
@@ -38,6 +39,7 @@ export function OpportunityInputStep({
   sourceText,
   error,
   isAnalyzing,
+  sampleMode = false,
   onTypeChange,
   onTextChange,
   onAnalyze,
@@ -56,9 +58,9 @@ export function OpportunityInputStep({
       <div>
         <h2 className="text-xl font-semibold">What are you considering?</h2>
         <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-          Paste an internship, course, certification, project, or other
-          opportunity. Mova will estimate how completing it could change
-          your current career readiness.
+          {sampleMode
+            ? "This public demo includes one sample internship. Completing it is scored by Mova's real scenario engine — not a hard-coded result."
+            : "Paste an internship, course, certification, project, or other opportunity. Mova will estimate how completing it could change your current career readiness."}
         </p>
       </div>
 
@@ -72,7 +74,11 @@ export function OpportunityInputStep({
             key={option.type}
             type="button"
             aria-pressed={opportunityType === option.type}
-            onClick={() => onTypeChange(option.type)}
+            onClick={() => {
+              if (!sampleMode) {
+                onTypeChange(option.type);
+              }
+            }}
             className={cn(
               "rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors",
               opportunityType === option.type
@@ -87,7 +93,7 @@ export function OpportunityInputStep({
 
       <div className="space-y-2">
         <label htmlFor="opportunity-description" className="text-sm font-medium">
-          Paste the description
+          {sampleMode ? "Sample opportunity" : "Paste the description"}
         </label>
         <Textarea
           id="opportunity-description"
@@ -95,7 +101,8 @@ export function OpportunityInputStep({
           onChange={(event) => onTextChange(event.target.value)}
           placeholder="Software Engineering Intern. Build React and TypeScript interfaces, integrate REST APIs, write automated tests..."
           className="min-h-36"
-          disabled={isAnalyzing}
+          disabled={isAnalyzing || sampleMode}
+          readOnly={sampleMode}
         />
         <p className="text-xs text-muted-foreground">
           {sourceText.length} / {MAX_OPPORTUNITY_TEXT_CHARS} characters
@@ -125,6 +132,8 @@ export function OpportunityInputStep({
             <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
             Analyzing opportunity
           </>
+        ) : sampleMode ? (
+          "Analyze sample opportunity"
         ) : (
           "Analyze opportunity"
         )}

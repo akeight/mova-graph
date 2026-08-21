@@ -30,6 +30,11 @@ import type {
   ProfileItemKind,
 } from "../types/profile-item-extraction";
 
+import { DemoSignInPrompt } from
+  "@/features/demo/components/demo-sign-in-prompt";
+import { useWorkspaceRuntime } from
+  "@/features/workspace/runtime/workspace-runtime";
+
 import {
   shouldPreselectExtractedSkill,
 } from "../services/normalize-extraction";
@@ -65,6 +70,7 @@ function evidenceConfidenceLabel(skill: ExtractedSkill) {
 export function ProfileExtractionReview({
   onAdd,
 }: ProfileExtractionReviewProps) {
+  const runtime = useWorkspaceRuntime();
   const [kind, setKind] =
     useState<ProfileItemKind>(
       "experience",
@@ -263,6 +269,15 @@ export function ProfileExtractionReview({
       "completed",
     );
   };
+
+  if (runtime.kind === "demo") {
+    return (
+      <DemoSignInPrompt
+        title="AI profile assistant"
+        description="Analyzing a custom course or experience requires a Mova account. Sign in to use Claude-backed extraction, or keep exploring this demo with the sample resume and What If opportunity."
+      />
+    );
+  }
 
   return (
     <section className="rounded-2xl border bg-card p-5 shadow-sm">
@@ -645,7 +660,7 @@ export function ProfileExtractionReview({
                           {skill.normalizationMethod ===
                           "unmapped" ? (
                             <span className="mt-1 block text-xs text-muted-foreground">
-                              Not yet mapped to a MOVa career
+                              Not yet mapped to a Mova career
                               evidence category
                             </span>
                           ) : skill.sourcePhrase ? (

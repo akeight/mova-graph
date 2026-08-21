@@ -18,8 +18,10 @@ import {
   persistUserWorkspace,
 } from "../services/workspace-client";
 
-import { resolveWorkspaceHydration } from
-  "../services/resolve-workspace-hydration";
+import {
+  hydrateWorkspaceIfEnabled,
+  persistWorkspaceIfEnabled,
+} from "../services/workspace-persistence-gate";
 
 import type {
   PersistedWorkspace,
@@ -33,6 +35,7 @@ type UseWorkspacePersistenceOptions = {
   profile: StudentProfile;
   selectedRoleId: string;
   onboarding: OnboardingState;
+  enabled?: boolean;
 
   onHydrate: (workspace: PersistedWorkspace) => void;
 };
@@ -41,16 +44,21 @@ export function useWorkspacePersistence({
   profile,
   selectedRoleId,
   onboarding,
+  enabled = true,
   onHydrate,
 }: UseWorkspacePersistenceOptions) {
   const [hydrationStatus, setHydrationStatus] =
-    useState<WorkspaceHydrationStatus>("loading");
+    useState<WorkspaceHydrationStatus>(
+      () => (enabled ? "loading" : "local-only"),
+    );
 
   const [hydrationAttempt, setHydrationAttempt] =
     useState(0);
 
   const [status, setStatus] =
-    useState<WorkspaceSaveStatus>("loading");
+    useState<WorkspaceSaveStatus>(
+      () => (enabled ? "loading" : "local-only"),
+    );
 
   const [lastSavedAt, setLastSavedAt] =
     useState<Date | null>(null);
@@ -76,6 +84,10 @@ export function useWorkspacePersistence({
   }, []);
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     const controller = new AbortController();
 
     const hydrateWorkspace = async () => {
@@ -86,7 +98,7 @@ export function useWorkspacePersistence({
       let result;
 
       try {
-        result = await resolveWorkspaceHydration({
+        result = await hydrateWorkspaceIfEnabled(enabled, {
           loadUserWorkspace,
           claimWorkspace,
           getStoredAnonymousWorkspaceId,
@@ -98,6 +110,13 @@ export function useWorkspacePersistence({
       }
 
       if (controller.signal.aborted) {
+        return;
+      }
+
+      if (result.kind === "disabled") {
+        setHydrationStatus("local-only");
+        setStatus("local-only");
+        setLastSavedAt(null);
         return;
       }
 
@@ -135,9 +154,13 @@ export function useWorkspacePersistence({
     return () => {
       controller.abort();
     };
-  }, [hydrationAttempt, onHydrate]);
+  }, [enabled, hydrationAttempt, onHydrate]);
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     if (hydrationStatus !== "ready") {
       return;
     }
@@ -149,7 +172,9 @@ export function useWorkspacePersistence({
       setError(null);
 
       try {
-        const workspace = await persistUserWorkspace(
+        const persisted = await persistWorkspaceIfEnabled(
+          enabled,
+          persistUserWorkspace,
           {
             version: 2,
             profile,
@@ -159,7 +184,14 @@ export function useWorkspacePersistence({
           controller.signal,
         );
 
-        setLastSavedAt(new Date(workspace.updatedAt));
+        if (persisted.kind === "disabled") {
+          setHydrationStatus("local-only");
+          setStatus("local-only");
+          setLastSavedAt(null);
+          return;
+        }
+
+        setLastSavedAt(new Date(persisted.workspace.updatedAt));
         setStatus("saved");
       } catch (caughtError) {
         if (controller.signal.aborted) {
@@ -181,6 +213,7 @@ export function useWorkspacePersistence({
       controller.abort();
     };
   }, [
+    enabled,
     hydrationStatus,
     profile,
     selectedRoleId,

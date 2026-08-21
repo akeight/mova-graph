@@ -37,10 +37,12 @@ import {
 import {
   analysisStepIndexForElapsedMs,
 } from "../services/resume-analysis-progress";
+import { useWorkspaceRuntime } from
+  "@/features/workspace/runtime/workspace-runtime";
 import {
-  extractResumeSource,
-  parseResumeFile,
-} from "../services/resume-import-client";
+  getLastDemoResumeExtractionMode,
+  type DemoResumeExtractionMode,
+} from "@/features/demo/runtime/demo-live-extraction";
 import { canAddResumeSourceText } from
   "../services/resume-session-capacity";
 import {
@@ -73,6 +75,7 @@ type ResumeImportWizardProps = {
   mode: ResumeImportMode;
   onApproved: (profile: StudentProfile) => void;
   onCancel: () => void;
+  initialSources?: CollectedSource[];
 };
 
 function createSourceId(): string {
@@ -133,14 +136,20 @@ export function ResumeImportWizard({
   mode,
   onApproved,
   onCancel,
+  initialSources,
 }: ResumeImportWizardProps) {
+  const runtime = useWorkspaceRuntime();
   const [stage, setStage] = useState<WizardStage>("collect");
-  const [sources, setSources] = useState<CollectedSource[]>([]);
+  const [sources, setSources] = useState<CollectedSource[]>(
+    () => initialSources ?? [],
+  );
   const [pasteText, setPasteText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [analysisSourceIndex, setAnalysisSourceIndex] = useState(0);
   const [analysisElapsedMs, setAnalysisElapsedMs] = useState(0);
   const [draft, setDraft] = useState<ResumeImportDraft | null>(null);
+  const [demoExtractionMode, setDemoExtractionMode] =
+    useState<DemoResumeExtractionMode | null>(null);
 
   const sourceTotalChars = sources.reduce(
     (total, source) => total + source.text.length,
@@ -186,7 +195,7 @@ export function ResumeImportWizard({
     setError(null);
 
     try {
-      const parsed = await parseResumeFile(file);
+      const parsed = await runtime.parseResumeFile(file);
       addParsedSource(parsed.displayName, parsed.text);
     } catch (caught) {
       setError(
@@ -242,7 +251,7 @@ export function ResumeImportWizard({
         setAnalysisSourceIndex(index);
         setAnalysisElapsedMs(0);
         drafts.push(
-          await extractResumeSource({
+          await runtime.extractResumeSource({
             sourceId: source.id,
             displayName: source.displayName,
             text: source.text,
@@ -256,6 +265,9 @@ export function ResumeImportWizard({
         applyProposedName: mode === "onboarding" && Boolean(merged.proposedName),
         proposedName: merged.proposedName,
       });
+      setDemoExtractionMode(
+        runtime.kind === "demo" ? getLastDemoResumeExtractionMode() : null,
+      );
 
       setStage(
         merged.possibleDuplicates.length > 0 ? "duplicates" : "review",
@@ -291,6 +303,41 @@ export function ResumeImportWizard({
     }
   };
 
+  if (stage === "collect" && runtime.kind === "demo") {
+    const sample = sources[0];
+
+    return (
+      <div className="space-y-5">
+        <div>
+          <h2 className="text-lg font-semibold">Sample resume</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Mova uses Claude to interpret this sample resume, then applies its
+            own grounded evidence and career-readiness model. If AI is
+            temporarily unavailable, the demo falls back to a saved extraction
+            so you can keep exploring.
+          </p>
+        </div>
+
+        <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-2xl border bg-muted/30 p-4 text-sm leading-relaxed text-foreground">
+          {sample?.text ?? ""}
+        </pre>
+
+        {error ? (
+          <p className="text-sm text-destructive">{error}</p>
+        ) : null}
+
+        <div className="flex justify-between gap-3">
+          <Button variant="ghost" onClick={onCancel}>
+            Back
+          </Button>
+          <Button disabled={!canAnalyze} onClick={() => void analyze()}>
+            Analyze sample resume
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (stage === "collect") {
     return (
       <div className="space-y-5">
@@ -298,7 +345,7 @@ export function ResumeImportWizard({
           <h2 className="text-lg font-semibold">Your resume sources</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Add up to {MAX_RESUME_SOURCES} PDF or DOCX files, or paste text.
-            MOVa will combine them into one profile draft.
+            Mova will combine them into one profile draft.
           </p>
         </div>
 
@@ -423,6 +470,13 @@ export function ResumeImportWizard({
       draft={draft}
       mode={mode}
       error={error}
+      extractionNote={
+        demoExtractionMode === "live"
+          ? "Analyzed live with Claude"
+          : demoExtractionMode === "fallback"
+            ? "Using saved demo extraction"
+            : null
+      }
       onChange={setDraft}
       onContinue={() => setStage("missing")}
       onCancel={onCancel}
@@ -585,6 +639,7 @@ function DraftReviewStage({
   draft,
   mode,
   error,
+  extractionNote,
   onChange,
   onContinue,
   onCancel,
@@ -592,6 +647,7 @@ function DraftReviewStage({
   draft: ResumeImportDraft;
   mode: ResumeImportMode;
   error: string | null;
+  extractionNote?: string | null;
   onChange: (draft: ResumeImportDraft) => void;
   onContinue: () => void;
   onCancel: () => void;
@@ -626,7 +682,10 @@ function DraftReviewStage({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold">MOVa combined your experience</h2>
+        <h2 className="text-lg font-semibold">Mova combined your experience</h2>
+        {extractionNote ? (
+          <p className="mt-1 text-xs text-muted-foreground">{extractionNote}</p>
+        ) : null}
         <p className="mt-1 text-sm text-muted-foreground">
           We found information across {draft.sources.length} resume
           {draft.sources.length === 1 ? "" : "s"}. {draft.items.length} items

@@ -32,6 +32,8 @@ type WorkspaceShellProps = {
   lastSavedAt: Date | null;
   saveError: string | null;
   userEmail: string | null;
+  accountVariant?: "authenticated" | "demo";
+  showSaveStatus?: boolean;
   children: ReactNode;
 };
 
@@ -42,6 +44,8 @@ export function WorkspaceShell({
   lastSavedAt,
   saveError,
   userEmail,
+  accountVariant = "authenticated",
+  showSaveStatus = true,
   children,
 }: WorkspaceShellProps) {
   const [isMobileNavOpen, setIsMobileNavOpen] =
@@ -54,12 +58,16 @@ export function WorkspaceShell({
     setIsMobileNavOpen(false);
   };
 
-  const saveStatusNode = (
+  const saveStatusNode = showSaveStatus ? (
     <WorkspaceSaveStatus
       status={saveStatus}
       lastSavedAt={lastSavedAt}
       error={saveError}
     />
+  ) : null;
+
+  const accountNode = (
+    <AccountMenu userEmail={userEmail} variant={accountVariant} />
   );
 
   return (
@@ -73,7 +81,7 @@ export function WorkspaceShell({
 
         <div className="space-y-3 border-t border-sidebar-border px-4 py-4">
           {saveStatusNode}
-          <AccountMenu userEmail={userEmail} />
+          {accountNode}
           <ThemeToggle />
         </div>
       </aside>
@@ -115,7 +123,7 @@ export function WorkspaceShell({
 
               <div className="space-y-3 border-t border-sidebar-border px-4 py-4">
                 {saveStatusNode}
-                <AccountMenu userEmail={userEmail} />
+                {accountNode}
                 <ThemeToggle />
               </div>
             </SheetContent>

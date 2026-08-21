@@ -138,7 +138,7 @@ export function ResumeDraftEvidenceEditor({
               </div>
               {skill.normalizationMethod === "unmapped" ? (
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Not yet mapped to a MOVa career evidence category
+                  Not yet mapped to a Mova career evidence category
                 </p>
               ) : skill.sourcePhrase ? (
                 <p className="mt-1 text-xs text-muted-foreground">
@@ -147,7 +147,7 @@ export function ResumeDraftEvidenceEditor({
               ) : null}
               {skill.evidence ? (
                 <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  Why MOVa added this: {skill.evidence}
+                  Why Mova added this: {skill.evidence}
                 </p>
               ) : null}
               {impliedSkills.length > 0 ? (

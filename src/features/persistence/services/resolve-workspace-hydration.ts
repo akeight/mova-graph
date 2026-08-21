@@ -21,7 +21,7 @@ export type WorkspaceHydrationResult =
   | { kind: "fresh" }
   | { kind: "error"; message: string };
 
-type ResolveWorkspaceHydrationDeps = {
+export type ResolveWorkspaceHydrationDeps = {
   loadUserWorkspace: (
     signal?: AbortSignal,
   ) => Promise<PersistedWorkspace>;

@@ -27,7 +27,7 @@ import { OnboardingFlow } from
 import {
   advanceOnboarding,
   completeOnboarding,
-  initialOnboarding,
+  initialOnboarding as createInitialOnboardingState,
 } from "@/features/onboarding/services/onboarding-state";
 import { resumeOnboardingStep } from
   "@/features/onboarding/services/resume-onboarding-step";
@@ -157,20 +157,32 @@ function createInitialProfile(
 
 type MovaWorkspaceProps = {
   userEmail: string | null;
+  persistenceEnabled?: boolean;
+  initialProfile?: StudentProfile;
+  initialOnboarding?: OnboardingState;
+  initialSelectedRoleId?: string;
+  showRestoreDemo?: boolean;
+  accountVariant?: "authenticated" | "demo";
 };
 
 export function MovaWorkspace({
   userEmail,
+  persistenceEnabled = true,
+  initialProfile,
+  initialOnboarding,
+  initialSelectedRoleId,
+  showRestoreDemo = true,
+  accountVariant = "authenticated",
 }: MovaWorkspaceProps) {
   const [profile, setProfile] =
     useState<StudentProfile>(
-      () => createInitialProfile(userEmail),
+      () => initialProfile ?? createInitialProfile(userEmail),
     );
 
   const [
     selectedRoleId,
     setSelectedRoleId,
-  ] = useState(defaultCareerRoleId);
+  ] = useState(initialSelectedRoleId ?? defaultCareerRoleId);
 
   const [
     activeRecommendationId,
@@ -190,7 +202,7 @@ export function MovaWorkspace({
 
   const [onboarding, setOnboarding] =
     useState<OnboardingState>(
-      initialOnboarding,
+      () => initialOnboarding ?? createInitialOnboardingState(),
     );
 
   const handleWorkspaceHydrate =
@@ -314,6 +326,7 @@ export function MovaWorkspace({
       profile,
       selectedRoleId,
       onboarding,
+      enabled: persistenceEnabled,
       onHydrate:
         handleWorkspaceHydrate,
     });
@@ -510,7 +523,9 @@ export function MovaWorkspace({
         onAddExtractedItem={
           handleAddExtractedItem
         }
-        onRestoreDemo={restoreDemo}
+        onRestoreDemo={
+          showRestoreDemo ? restoreDemo : undefined
+        }
         currentStep={onboarding.step}
         onStepChange={
           handleOnboardingStepChange
@@ -530,6 +545,8 @@ export function MovaWorkspace({
       }
       saveError={persistence.error}
       userEmail={userEmail}
+      accountVariant={accountVariant}
+      showSaveStatus={persistenceEnabled}
     >
       {activeView === "dashboard" ? (
         <DashboardView
@@ -622,7 +639,9 @@ export function MovaWorkspace({
           onProfileChange={
             handleProfileChange
           }
-          onRestoreDemo={restoreDemo}
+          onRestoreDemo={
+          showRestoreDemo ? restoreDemo : undefined
+        }
           onAddExtractedItem={
             handleAddExtractedItem
           }
