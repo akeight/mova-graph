@@ -1,10 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   FileUp,
-  LoaderCircle,
   Plus,
   Trash2,
 } from "lucide-react";
@@ -19,6 +18,8 @@ import {
 import type { StudentProfile } from
   "@/features/student-profile/types/student-profile";
 
+import { ResumeAnalysisProgress } from
+  "./resume-analysis-progress";
 import { ResumeDraftEvidenceEditor } from
   "./resume-draft-evidence-editor";
 import {
@@ -33,6 +34,9 @@ import {
   applyDuplicateDecision,
   mergeResumeDrafts,
 } from "../services/merge-resume-drafts";
+import {
+  analysisStepIndexForElapsedMs,
+} from "../services/resume-analysis-progress";
 import {
   extractResumeSource,
   parseResumeFile,
@@ -70,13 +74,6 @@ type ResumeImportWizardProps = {
   onApproved: (profile: StudentProfile) => void;
   onCancel: () => void;
 };
-
-const ANALYSIS_STAGES = [
-  "Reading your resumes...",
-  "Finding experiences...",
-  "Mapping evidence...",
-  "Preparing your draft profile...",
-] as const;
 
 function createSourceId(): string {
   return crypto.randomUUID();
@@ -141,7 +138,8 @@ export function ResumeImportWizard({
   const [sources, setSources] = useState<CollectedSource[]>([]);
   const [pasteText, setPasteText] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [analysisIndex, setAnalysisIndex] = useState(0);
+  const [analysisSourceIndex, setAnalysisSourceIndex] = useState(0);
+  const [analysisElapsedMs, setAnalysisElapsedMs] = useState(0);
   const [draft, setDraft] = useState<ResumeImportDraft | null>(null);
 
   const sourceTotalChars = sources.reduce(
@@ -212,20 +210,37 @@ export function ResumeImportWizard({
     setError(null);
   };
 
+  useEffect(() => {
+    if (stage !== "analyzing") {
+      return;
+    }
+
+    const startedAt = Date.now();
+    const intervalId = window.setInterval(() => {
+      setAnalysisElapsedMs(Date.now() - startedAt);
+    }, 400);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [stage, analysisSourceIndex]);
+
   const analyze = async () => {
     if (sources.length === 0) {
       return;
     }
 
     setStage("analyzing");
-    setAnalysisIndex(0);
+    setAnalysisSourceIndex(0);
+    setAnalysisElapsedMs(0);
     setError(null);
 
     try {
       const drafts: ResumeImportDraft[] = [];
 
       for (const [index, source] of sources.entries()) {
-        setAnalysisIndex(Math.min(index, ANALYSIS_STAGES.length - 1));
+        setAnalysisSourceIndex(index);
+        setAnalysisElapsedMs(0);
         drafts.push(
           await extractResumeSource({
             sourceId: source.id,
@@ -234,8 +249,6 @@ export function ResumeImportWizard({
           }),
         );
       }
-
-      setAnalysisIndex(ANALYSIS_STAGES.length - 1);
 
       const merged = mergeResumeDrafts(drafts, baselineProfile);
       setDraft({
@@ -360,13 +373,16 @@ export function ResumeImportWizard({
   }
 
   if (stage === "analyzing") {
+    const currentSource = sources[analysisSourceIndex] ?? sources[0];
+
     return (
-      <div className="flex flex-col items-center gap-4 rounded-2xl border bg-card p-8 text-center">
-        <LoaderCircle className="h-6 w-6 animate-spin text-primary" />
-        <p className="text-sm font-medium">
-          {ANALYSIS_STAGES[analysisIndex]}
-        </p>
-      </div>
+      <ResumeAnalysisProgress
+        sourceLabel={currentSource?.displayName ?? "Resume"}
+        sourceIndex={analysisSourceIndex}
+        sourceCount={sources.length}
+        stepIndex={analysisStepIndexForElapsedMs(analysisElapsedMs)}
+        elapsedMs={analysisElapsedMs}
+      />
     );
   }
 
