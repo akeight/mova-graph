@@ -11,6 +11,18 @@ import {
 import {
   DEMO_OPPORTUNITY_EXTRACTION,
 } from "../data/demo-opportunity";
+import { isAcceptablePublicDemoResumeDraft } from
+  "../services/demo-live-resume-guard";
+import { parsePublicDemoResumeDraft } from
+  "../services/parse-public-demo-resume-draft";
+
+import {
+  DEMO_LIVE_EXTRACTION_HEADER,
+  DEMO_LIVE_EXTRACTION_VALUE,
+  DEMO_RESUME_EXTRACT_PATH,
+  DEMO_RESUME_EXTRACT_TIMEOUT_MS,
+  rememberDemoResumeExtractionMode,
+} from "./demo-live-extraction";
 
 async function waitForDemoAnalysis(): Promise<void> {
   if (typeof window === "undefined") {
@@ -22,9 +34,48 @@ async function waitForDemoAnalysis(): Promise<void> {
   });
 }
 
-export async function extractDemoResumeSource(): Promise<ResumeImportDraft> {
-  await waitForDemoAnalysis();
+function fallbackResumeDraft(): ResumeImportDraft {
+  rememberDemoResumeExtractionMode("fallback");
   return structuredClone(DEMO_RESUME_DRAFT);
+}
+
+export async function extractDemoResumeSource(
+  _input?: {
+    sourceId: string;
+    displayName: string;
+    text: string;
+  },
+): Promise<ResumeImportDraft> {
+  void _input;
+
+  try {
+    const response = await fetch(DEMO_RESUME_EXTRACT_PATH, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+      signal: AbortSignal.timeout(DEMO_RESUME_EXTRACT_TIMEOUT_MS),
+    });
+
+    if (
+      !response.ok ||
+      response.headers.get(DEMO_LIVE_EXTRACTION_HEADER) !==
+        DEMO_LIVE_EXTRACTION_VALUE
+    ) {
+      return fallbackResumeDraft();
+    }
+
+    const body: unknown = await response.json();
+    const draft = parsePublicDemoResumeDraft(body);
+
+    if (!draft || !isAcceptablePublicDemoResumeDraft(draft)) {
+      return fallbackResumeDraft();
+    }
+
+    rememberDemoResumeExtractionMode("live");
+    return draft;
+  } catch {
+    return fallbackResumeDraft();
+  }
 }
 
 export async function parseDemoResumeFile(): Promise<{

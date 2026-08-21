@@ -24,6 +24,7 @@ import { createEmptyProfile } from
   "@/features/student-profile/utils/create-empty-profile";
 
 export const DEMO_RESUME_SOURCE_ID = "demo-resume-source";
+export const DEMO_RESUME_DISPLAY_NAME = "Sample Software Engineering Resume";
 export const DEMO_STUDENT_ID = "demo-student";
 
 export const DEMO_RESUME_TEXT = `ALLYSON KEIGHTLEY
@@ -170,7 +171,7 @@ export const DEMO_RESUME_DRAFT: ResumeImportDraft = {
   sources: [
     {
       id: DEMO_RESUME_SOURCE_ID,
-      displayName: "Sample Software Engineering Resume",
+      displayName: DEMO_RESUME_DISPLAY_NAME,
     },
   ],
   proposedName: "Allyson Keightley",

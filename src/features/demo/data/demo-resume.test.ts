@@ -8,6 +8,7 @@ import { completeOnboarding, initialOnboarding } from
   "@/features/onboarding/services/onboarding-state";
 
 import {
+  DEMO_RESUME_DISPLAY_NAME,
   DEMO_RESUME_DRAFT,
   DEMO_RESUME_SOURCE_ID,
   DEMO_RESUME_TEXT,
@@ -41,7 +42,7 @@ describe("DEMO_RESUME_DRAFT", () => {
     expect(DEMO_RESUME_DRAFT.sources).toEqual([
       {
         id: DEMO_RESUME_SOURCE_ID,
-        displayName: "Sample Software Engineering Resume",
+        displayName: DEMO_RESUME_DISPLAY_NAME,
       },
     ]);
     expect(DEMO_RESUME_DRAFT.proposedName).toBe("Allyson Keightley");

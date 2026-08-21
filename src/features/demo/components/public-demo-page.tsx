@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
+  DEMO_RESUME_DISPLAY_NAME,
   DEMO_RESUME_SOURCE_ID,
   DEMO_RESUME_TEXT,
   createDemoBaselineProfile,
@@ -84,7 +85,7 @@ function DemoWorkspace({
             initialSources={[
               {
                 id: DEMO_RESUME_SOURCE_ID,
-                displayName: "Sample Software Engineering Resume",
+                displayName: DEMO_RESUME_DISPLAY_NAME,
                 text: DEMO_RESUME_TEXT,
               },
             ]}

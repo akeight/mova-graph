@@ -39,6 +39,10 @@ import {
 } from "../services/resume-analysis-progress";
 import { useWorkspaceRuntime } from
   "@/features/workspace/runtime/workspace-runtime";
+import {
+  getLastDemoResumeExtractionMode,
+  type DemoResumeExtractionMode,
+} from "@/features/demo/runtime/demo-live-extraction";
 import { canAddResumeSourceText } from
   "../services/resume-session-capacity";
 import {
@@ -144,6 +148,8 @@ export function ResumeImportWizard({
   const [analysisSourceIndex, setAnalysisSourceIndex] = useState(0);
   const [analysisElapsedMs, setAnalysisElapsedMs] = useState(0);
   const [draft, setDraft] = useState<ResumeImportDraft | null>(null);
+  const [demoExtractionMode, setDemoExtractionMode] =
+    useState<DemoResumeExtractionMode | null>(null);
 
   const sourceTotalChars = sources.reduce(
     (total, source) => total + source.text.length,
@@ -259,6 +265,9 @@ export function ResumeImportWizard({
         applyProposedName: mode === "onboarding" && Boolean(merged.proposedName),
         proposedName: merged.proposedName,
       });
+      setDemoExtractionMode(
+        runtime.kind === "demo" ? getLastDemoResumeExtractionMode() : null,
+      );
 
       setStage(
         merged.possibleDuplicates.length > 0 ? "duplicates" : "review",
@@ -302,8 +311,10 @@ export function ResumeImportWizard({
         <div>
           <h2 className="text-lg font-semibold">Sample resume</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            This is a sanitized software-engineering student resume. Analyze it
-            to see what Mova finds — no account required.
+            Mova uses Claude to interpret this sample resume, then applies its
+            own grounded evidence and career-readiness model. If AI is
+            temporarily unavailable, the demo falls back to a saved extraction
+            so you can keep exploring.
           </p>
         </div>
 
@@ -459,6 +470,13 @@ export function ResumeImportWizard({
       draft={draft}
       mode={mode}
       error={error}
+      extractionNote={
+        demoExtractionMode === "live"
+          ? "Analyzed live with Claude"
+          : demoExtractionMode === "fallback"
+            ? "Using saved demo extraction"
+            : null
+      }
       onChange={setDraft}
       onContinue={() => setStage("missing")}
       onCancel={onCancel}
@@ -621,6 +639,7 @@ function DraftReviewStage({
   draft,
   mode,
   error,
+  extractionNote,
   onChange,
   onContinue,
   onCancel,
@@ -628,6 +647,7 @@ function DraftReviewStage({
   draft: ResumeImportDraft;
   mode: ResumeImportMode;
   error: string | null;
+  extractionNote?: string | null;
   onChange: (draft: ResumeImportDraft) => void;
   onContinue: () => void;
   onCancel: () => void;
@@ -663,6 +683,9 @@ function DraftReviewStage({
     <div className="space-y-6">
       <div>
         <h2 className="text-lg font-semibold">Mova combined your experience</h2>
+        {extractionNote ? (
+          <p className="mt-1 text-xs text-muted-foreground">{extractionNote}</p>
+        ) : null}
         <p className="mt-1 text-sm text-muted-foreground">
           We found information across {draft.sources.length} resume
           {draft.sources.length === 1 ? "" : "s"}. {draft.items.length} items
