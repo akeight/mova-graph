@@ -21,7 +21,7 @@ export function SkillGapsView({
   onAddEvidence,
 }: SkillGapsViewProps) {
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6 overflow-x-clip">
       <header className="space-y-3">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">

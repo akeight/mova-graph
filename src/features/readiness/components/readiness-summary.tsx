@@ -89,9 +89,9 @@ export function ReadinessSummary({
   );
 
   return (
-    <section className="rounded-2xl border bg-card p-5 shadow-sm">
+    <section className="min-w-0 overflow-x-clip rounded-2xl border bg-card p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-5">
-        <div className="flex items-start gap-3">
+        <div className="flex min-w-0 items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-category-role/12 text-category-role">
             <Target
               className="h-5 w-5"
@@ -99,7 +99,7 @@ export function ReadinessSummary({
             />
           </div>
 
-          <div>
+          <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
               Career readiness
             </p>
@@ -145,7 +145,7 @@ export function ReadinessSummary({
         </div>
       </div>
 
-      <div className="mt-5 grid grid-cols-3 gap-3">
+      <div className="mt-5 grid min-w-0 grid-cols-3 gap-2 sm:gap-3">
         <Metric
           label="Demonstrated"
           value={assessment.demonstratedCount}
@@ -213,17 +213,17 @@ function CompetencySection({
 }) {
   return (
     <div className="mt-5 border-t pt-5">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h3 className="text-sm font-semibold">
           {title}
         </h3>
 
-        <p className="text-xs text-muted-foreground">
+        <p className="min-w-0 text-xs text-muted-foreground">
           {hint}
         </p>
       </div>
 
-      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+      <div className="mt-3 grid min-w-0 gap-3 sm:grid-cols-2">
         {competencies.map((competency) => {
           const status = statusConfig[competency.displayStatus];
           const StatusIcon = status.icon;
@@ -234,9 +234,9 @@ function CompetencySection({
           return (
             <article
               key={competency.competencyId}
-              className="space-y-3 rounded-xl border bg-background p-3"
+              className="min-w-0 space-y-3 rounded-xl border bg-background p-3"
             >
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">
                     {competency.competencyName}
@@ -271,10 +271,10 @@ function CompetencySection({
                   {gapOptions.map((option) => (
                     <div
                       key={`${option.groupId}-${option.skillId}`}
-                      className="flex items-start justify-between gap-2"
+                      className="flex min-w-0 items-start justify-between gap-2"
                     >
                       <div className="min-w-0">
-                        <p className="text-xs font-medium">
+                        <p className="break-words text-xs font-medium">
                           {option.skillName}
                         </p>
                         {option.alternativeNames.length > 0 ? (
@@ -329,17 +329,17 @@ function Metric({
   className,
 }: MetricProps) {
   return (
-    <div className="rounded-xl border bg-background p-3 text-center">
+    <div className="min-w-0 rounded-xl border bg-background px-2 py-3 text-center sm:p-3">
       <p
         className={cn(
-          "text-2xl font-bold",
+          "text-xl font-bold sm:text-2xl",
           className,
         )}
       >
         {value}
       </p>
 
-      <p className="mt-1 text-xs text-muted-foreground">
+      <p className="mt-1 text-[10px] leading-tight text-muted-foreground sm:text-xs">
         {label}
       </p>
     </div>
