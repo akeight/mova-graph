@@ -26,16 +26,8 @@ import {
   RotateCcw,
 } from "lucide-react";
 
-import { Button } from
-  "@/components/ui/button";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 import type { CareerRole } from
   "@/features/goals/types/career-role";
@@ -101,22 +93,15 @@ function OpportunityMapCanvas({
   onNodeActivate,
 }: OpportunityMapCanvasProps) {
   const [nodes, setNodes, onNodesChange] =
-    useNodesState<MovaNode>(
-      graph.nodes,
-    );
+    useNodesState<MovaNode>(graph.nodes);
 
   const [edges, setEdges, onEdgesChange] =
-    useEdgesState<MovaEdge>(
-      graph.edges,
-    );
+    useEdgesState<MovaEdge>(graph.edges);
 
-  const reactFlowInstanceRef =
-    useRef<
-      ReactFlowInstance<
-        MovaNode,
-        MovaEdge
-      > | null
-    >(null);
+  const reactFlowInstanceRef = useRef<ReactFlowInstance<
+    MovaNode,
+    MovaEdge
+  > | null>(null);
 
   const structureKey = useMemo(
     () =>
@@ -127,36 +112,27 @@ function OpportunityMapCanvas({
     [graph.nodes],
   );
 
-  const fitGraph = useCallback(
-    (duration = 350) => {
-      window.requestAnimationFrame(
-        () => {
-          void reactFlowInstanceRef.current
-            ?.fitView({
-              ...FIT_VIEW_OPTIONS,
-              duration,
-            });
-        },
-      );
-    },
-    [],
-  );
+  const fitGraph = useCallback((duration = 350) => {
+    window.requestAnimationFrame(() => {
+      void reactFlowInstanceRef.current?.fitView({
+        ...FIT_VIEW_OPTIONS,
+        duration,
+      });
+    });
+  }, []);
 
   useEffect(() => {
     setNodes(graph.nodes);
     setEdges(graph.edges);
-  }, [
-    graph,
-    setEdges,
-    setNodes,
-  ]);
+  }, [graph, setEdges, setNodes]);
 
   useEffect(() => {
     fitGraph();
-  }, [
-    fitGraph,
-    structureKey,
-  ]);
+  }, [fitGraph, structureKey]);
+
+  useEffect(() => {
+    fitGraph(250);
+  }, [fitGraph, isFocusMode]);
 
   useEffect(() => {
     if (resetVersion === 0) {
@@ -166,42 +142,22 @@ function OpportunityMapCanvas({
     setNodes(graph.nodes);
     setEdges(graph.edges);
     fitGraph(400);
-  }, [
-    fitGraph,
-    graph,
-    resetVersion,
-    setEdges,
-    setNodes,
-  ]);
+  }, [fitGraph, graph, resetVersion, setEdges, setNodes]);
 
   return (
     <div
       className={
         isFocusMode
-          ? "h-full min-h-0 w-full overflow-hidden bg-background"
-          : [
-              "h-[500px]",
-              "w-full",
-              "overflow-hidden",
-              "rounded-2xl",
-              "border",
-              "bg-background",
-              "sm:h-[600px]",
-              "lg:h-[70vh]",
-              "lg:min-h-[620px]",
-            ].join(" ")
+          ? "h-full min-h-0 w-full flex-1 overflow-hidden bg-background"
+          : "h-[500px] w-full overflow-hidden rounded-2xl border bg-background sm:h-[600px] lg:h-[70vh] lg:min-h-[620px]"
       }
     >
       <ReactFlow
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
-        onNodesChange={
-          onNodesChange
-        }
-        onEdgesChange={
-          onEdgesChange
-        }
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
         onNodeClick={
           onNodeActivate
             ? (_event, node) => {
@@ -210,9 +166,7 @@ function OpportunityMapCanvas({
             : undefined
         }
         onInit={(instance) => {
-          reactFlowInstanceRef.current =
-            instance;
-
+          reactFlowInstanceRef.current = instance;
           fitGraph();
         }}
         nodesConnectable={false}
@@ -227,20 +181,14 @@ function OpportunityMapCanvas({
         aria-label="Career opportunity map"
       >
         <Background
-          variant={
-            BackgroundVariant.Dots
-          }
+          variant={BackgroundVariant.Dots}
           gap={20}
           size={1}
         />
 
         <Controls />
 
-        <MiniMap
-          pannable
-          zoomable
-          className="hidden md:block"
-        />
+        <MiniMap pannable zoomable className="hidden md:block" />
       </ReactFlow>
     </div>
   );
@@ -253,240 +201,161 @@ export function MovaGraph({
   isScenarioPreview = false,
   onNodeActivate,
 }: MovaGraphProps) {
-  const [isFocusModeOpen, setIsFocusModeOpen] =
-    useState(false);
-
-  const [
-    resetVersion,
-    setResetVersion,
-  ] = useState(0);
+  const [isFocusModeOpen, setIsFocusModeOpen] = useState(false);
+  const [resetVersion, setResetVersion] = useState(0);
+  const exitButtonRef = useRef<HTMLButtonElement>(null);
 
   const graph = useMemo(() => {
-    const studentGraph =
-      buildStudentGraph(
-        profile,
-        role,
-        recommendations,
-      );
-
-    return layoutMovaGraph(
-      studentGraph,
-      {
-        horizontalSpacing:
-          HORIZONTAL_SPACING,
-
-        verticalSpacing:
-          VERTICAL_SPACING,
-      },
+    const studentGraph = buildStudentGraph(
+      profile,
+      role,
+      recommendations,
     );
-  }, [
-    profile,
-    recommendations,
-    role,
-  ]);
+
+    return layoutMovaGraph(studentGraph, {
+      horizontalSpacing: HORIZONTAL_SPACING,
+      verticalSpacing: VERTICAL_SPACING,
+    });
+  }, [profile, recommendations, role]);
+
+  useEffect(() => {
+    if (!isFocusModeOpen) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    exitButtonRef.current?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsFocusModeOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isFocusModeOpen]);
 
   const resetGraphLayout = () => {
-    setResetVersion(
-      (currentVersion) =>
-        currentVersion + 1,
-    );
+    setResetVersion((currentVersion) => currentVersion + 1);
   };
 
   const title = isScenarioPreview
     ? "Projected opportunity map"
     : "Your opportunity map";
 
-  const description =
-    isScenarioPreview
-      ? `Preview how this move could change your path toward ${role.title}.`
-      : `See how your courses and experiences connect to ${role.title}.`;
+  const description = isScenarioPreview
+    ? `Preview how this move could change your path toward ${role.title}.`
+    : `See how your courses and experiences connect to ${role.title}.`;
+
+  const handleNodeActivate = onNodeActivate
+    ? (node: MovaNode) => {
+        const action = resolveGraphNodeAction(node);
+
+        if (action.type === "none") {
+          return;
+        }
+
+        if (isFocusModeOpen) {
+          setIsFocusModeOpen(false);
+          window.setTimeout(() => {
+            onNodeActivate(action);
+          }, 100);
+          return;
+        }
+
+        onNodeActivate(action);
+      }
+    : undefined;
 
   return (
-    <>
-      <section className="min-w-0 space-y-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <h2 className="text-2xl font-semibold tracking-tight">
-              {title}
-            </h2>
+    <section
+      className={cn(
+        "min-w-0 space-y-4",
+        isFocusModeOpen &&
+          "fixed inset-0 z-50 flex flex-col space-y-0 bg-background",
+      )}
+      role={isFocusModeOpen ? "dialog" : undefined}
+      aria-modal={isFocusModeOpen ? true : undefined}
+      aria-labelledby="opportunity-map-title"
+    >
+      <div
+        className={cn(
+          "flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between",
+          isFocusModeOpen &&
+            "shrink-0 border-b px-4 py-3 sm:items-center sm:px-6",
+        )}
+      >
+        <div className="min-w-0">
+          <h2
+            id="opportunity-map-title"
+            className="text-2xl font-semibold tracking-tight"
+          >
+            {title}
+          </h2>
 
-            <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-              {description}
-            </p>
-          </div>
-
-          <div className="flex shrink-0 flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={
-                resetGraphLayout
-              }
-            >
-              <RotateCcw
-                aria-hidden="true"
-              />
-
-              Reset layout
-            </Button>
-
-            <Button
-              type="button"
-              onClick={() =>
-                setIsFocusModeOpen(
-                  true,
-                )
-              }
-            >
-              <Expand
-                aria-hidden="true"
-              />
-
-              Focus mode
-            </Button>
-          </div>
+          <p
+            className={cn(
+              "mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground",
+              isFocusModeOpen && "hidden sm:block",
+            )}
+          >
+            {description}
+          </p>
         </div>
 
-        <OpportunityMapCanvas
-          graph={graph}
-          resetVersion={
-            resetVersion
-          }
-          onNodeActivate={
-            onNodeActivate
-              ? (node) =>
-                  onNodeActivate(
-                    resolveGraphNodeAction(node),
-                  )
-              : undefined
-          }
-        />
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size={isFocusModeOpen ? "sm" : "default"}
+            onClick={resetGraphLayout}
+          >
+            <RotateCcw aria-hidden="true" />
+            {isFocusModeOpen ? "Reset" : "Reset layout"}
+          </Button>
 
+          {isFocusModeOpen ? (
+            <Button
+              ref={exitButtonRef}
+              type="button"
+              size="sm"
+              onClick={() => setIsFocusModeOpen(false)}
+            >
+              <Minimize2 aria-hidden="true" />
+              <span className="hidden sm:inline">Exit focus</span>
+              <span className="sm:hidden">Exit</span>
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              onClick={() => setIsFocusModeOpen(true)}
+            >
+              <Expand aria-hidden="true" />
+              Focus mode
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <OpportunityMapCanvas
+        graph={graph}
+        resetVersion={resetVersion}
+        isFocusMode={isFocusModeOpen}
+        onNodeActivate={handleNodeActivate}
+      />
+
+      {isFocusModeOpen ? null : (
         <p className="text-xs leading-relaxed text-muted-foreground md:hidden">
-          Drag to explore the map,
-          pinch to zoom, or open Focus
+          Drag to explore the map, pinch to zoom, or open Focus
           mode for a larger view.
         </p>
-      </section>
-
-      <Dialog
-        open={isFocusModeOpen}
-        onOpenChange={
-          setIsFocusModeOpen
-        }
-      >
-        <DialogContent
-          showCloseButton={false}
-          className={[
-            "top-0",
-            "left-0",
-            "h-dvh",
-            "w-screen",
-            "max-w-none",
-            "translate-x-0",
-            "translate-y-0",
-            "grid-rows-[auto_minmax(0,1fr)]",
-            "gap-0",
-            "rounded-none",
-            "border-0",
-            "p-0",
-            "sm:max-w-none",
-          ].join(" ")}
-        >
-          <DialogHeader className="flex-row items-center justify-between gap-4 border-b bg-background px-4 py-3 pr-4 sm:px-6">
-            <div className="min-w-0">
-              <DialogTitle className="truncate text-base font-semibold sm:text-lg">
-                {title}
-              </DialogTitle>
-
-              <DialogDescription className="mt-1 hidden truncate sm:block">
-                {description}
-              </DialogDescription>
-            </div>
-
-            <div className="flex shrink-0 items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={
-                  resetGraphLayout
-                }
-              >
-                <RotateCcw
-                  aria-hidden="true"
-                />
-
-                <span className="hidden sm:inline">
-                  Reset
-                </span>
-              </Button>
-
-              <Button
-                type="button"
-                size="sm"
-                onClick={() =>
-                  setIsFocusModeOpen(
-                    false,
-                  )
-                }
-              >
-                <Minimize2
-                  aria-hidden="true"
-                />
-
-                <span className="hidden sm:inline">
-                  Exit focus
-                </span>
-
-                <span className="sm:hidden">
-                  Exit
-                </span>
-              </Button>
-            </div>
-          </DialogHeader>
-
-          <div className="min-h-0">
-            <OpportunityMapCanvas
-              graph={graph}
-              resetVersion={
-                resetVersion
-              }
-              isFocusMode
-              onNodeActivate={
-                onNodeActivate
-                  ? (node) => {
-                      const action =
-                        resolveGraphNodeAction(
-                          node,
-                        );
-
-                      if (
-                        action.type ===
-                        "none"
-                      ) {
-                        return;
-                      }
-
-                      setIsFocusModeOpen(
-                        false,
-                      );
-
-                      window.setTimeout(
-                        () => {
-                          onNodeActivate(
-                            action,
-                          );
-                        },
-                        100,
-                      );
-                    }
-                  : undefined
-              }
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+      )}
+    </section>
   );
 }
