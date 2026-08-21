@@ -9,10 +9,20 @@ import type {
   RawResumeExtraction,
   RawResumeItem,
 } from "@/features/resume-import/schemas/resume-extraction";
+import { checkAiRateLimit } from "@/lib/rate-limit";
 
 vi.mock("@/features/auth/services/session", () => ({
   getAuthenticatedUser: vi.fn(),
 }));
+
+vi.mock("@/lib/rate-limit", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/rate-limit")>();
+
+  return {
+    ...actual,
+    checkAiRateLimit: vi.fn(),
+  };
+});
 
 vi.mock("ai", async (importOriginal) => {
   const actual = await importOriginal<typeof import("ai")>();
@@ -25,6 +35,7 @@ vi.mock("ai", async (importOriginal) => {
 
 const mockedGetUser = vi.mocked(getAuthenticatedUser);
 const mockedGenerateText = vi.mocked(generateText);
+const mockedCheckAiRateLimit = vi.mocked(checkAiRateLimit);
 
 const PASTED_RESUME = [
   "Jordan Lee",
@@ -120,13 +131,14 @@ function makeRequest(body: unknown) {
   });
 }
 
-const originalKey = process.env.OPENAI_API_KEY;
+const originalKey = process.env.ANTHROPIC_API_KEY;
 
 describe("POST /api/ai/extract-resume", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.OPENAI_API_KEY = "test-key";
+    process.env.ANTHROPIC_API_KEY = "test-key";
     mockedGetUser.mockResolvedValue(makeUser());
+    mockedCheckAiRateLimit.mockResolvedValue({ success: true });
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
@@ -134,9 +146,9 @@ describe("POST /api/ai/extract-resume", () => {
     vi.restoreAllMocks();
 
     if (originalKey === undefined) {
-      delete process.env.OPENAI_API_KEY;
+      delete process.env.ANTHROPIC_API_KEY;
     } else {
-      process.env.OPENAI_API_KEY = originalKey;
+      process.env.ANTHROPIC_API_KEY = originalKey;
     }
   });
 
@@ -152,11 +164,12 @@ describe("POST /api/ai/extract-resume", () => {
     );
 
     expect(response.status).toBe(401);
+    expect(mockedCheckAiRateLimit).not.toHaveBeenCalled();
     expect(mockedGenerateText).not.toHaveBeenCalled();
   });
 
-  it("returns 503 when OPENAI_API_KEY is missing", async () => {
-    delete process.env.OPENAI_API_KEY;
+  it("returns 503 when ANTHROPIC_API_KEY is missing", async () => {
+    delete process.env.ANTHROPIC_API_KEY;
 
     const response = await POST(
       makeRequest({
@@ -185,6 +198,7 @@ describe("POST /api/ai/extract-resume", () => {
 
     expect(response.status).toBe(400);
     expect(body.error).toBe("That resume could not be analyzed.");
+    expect(mockedCheckAiRateLimit).not.toHaveBeenCalled();
     expect(mockedGenerateText).not.toHaveBeenCalled();
   });
 
@@ -212,7 +226,81 @@ describe("POST /api/ai/extract-resume", () => {
     expect(
       body.standaloneSkills.map((skill: { id: string }) => skill.id),
     ).toContain("aws");
+    expect(mockedCheckAiRateLimit).toHaveBeenCalledOnce();
     expect(mockedGenerateText).toHaveBeenCalledOnce();
+  });
+
+  it("returns 429 when the short-term AI rate limit is exceeded", async () => {
+    mockedCheckAiRateLimit.mockResolvedValue({
+      success: false,
+      type: "short-term",
+      reset: Date.now() + 30_000,
+    });
+
+    const response = await POST(
+      makeRequest({
+        sourceId: "source-1",
+        displayName: "Pasted resume",
+        text: PASTED_RESUME,
+      }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(429);
+    expect(body.error).toBe(
+      "Too many AI requests. Please wait a few minutes and try again.",
+    );
+    expect(Number(response.headers.get("Retry-After"))).toBeGreaterThanOrEqual(
+      1,
+    );
+    expect(mockedGenerateText).not.toHaveBeenCalled();
+  });
+
+  it("returns 429 when the daily AI rate limit is exceeded", async () => {
+    mockedCheckAiRateLimit.mockResolvedValue({
+      success: false,
+      type: "daily",
+      reset: Date.now() + 3_600_000,
+    });
+
+    const response = await POST(
+      makeRequest({
+        sourceId: "source-1",
+        displayName: "Pasted resume",
+        text: PASTED_RESUME,
+      }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(429);
+    expect(body.error).toBe(
+      "You've reached today's AI usage limit. Please try again later.",
+    );
+    expect(Number(response.headers.get("Retry-After"))).toBeGreaterThanOrEqual(
+      1,
+    );
+    expect(mockedGenerateText).not.toHaveBeenCalled();
+  });
+
+  it("returns 503 when AI rate-limit storage is unavailable", async () => {
+    mockedCheckAiRateLimit.mockResolvedValue({
+      success: false,
+      type: "unavailable",
+    });
+
+    const response = await POST(
+      makeRequest({
+        sourceId: "source-1",
+        displayName: "Pasted resume",
+        text: PASTED_RESUME,
+      }),
+    );
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({
+      error: "AI service protection is temporarily unavailable.",
+    });
+    expect(mockedGenerateText).not.toHaveBeenCalled();
   });
 
   it("returns 500 with a controlled message when the model request fails", async () => {

@@ -8,6 +8,10 @@ import {
   describeOpportunityExtractionFailure,
   extractOpportunity,
 } from "@/features/opportunity-what-if/services/extract-opportunity";
+import {
+  checkAiRateLimit,
+  createRateLimitResponse,
+} from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -56,7 +60,15 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!process.env.OPENAI_API_KEY) {
+  const rateLimit = await checkAiRateLimit(request, {
+    userId: user.id,
+  });
+
+  if (!rateLimit.success) {
+    return createRateLimitResponse(rateLimit);
+  }
+
+  if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json(
       { error: "AI extraction is not configured." },
       { status: 503 },

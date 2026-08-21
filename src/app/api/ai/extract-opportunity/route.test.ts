@@ -6,10 +6,20 @@ import { getAuthenticatedUser } from
   "@/features/auth/services/session";
 import { extractOpportunity } from
   "@/features/opportunity-what-if/services/extract-opportunity";
+import { checkAiRateLimit } from "@/lib/rate-limit";
 
 vi.mock("@/features/auth/services/session", () => ({
   getAuthenticatedUser: vi.fn(),
 }));
+
+vi.mock("@/lib/rate-limit", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/rate-limit")>();
+
+  return {
+    ...actual,
+    checkAiRateLimit: vi.fn(),
+  };
+});
 
 vi.mock(
   "@/features/opportunity-what-if/services/extract-opportunity",
@@ -28,6 +38,7 @@ vi.mock(
 
 const mockedGetUser = vi.mocked(getAuthenticatedUser);
 const mockedExtract = vi.mocked(extractOpportunity);
+const mockedCheckAiRateLimit = vi.mocked(checkAiRateLimit);
 
 function makeUser() {
   return {
@@ -44,7 +55,7 @@ function makeRequest(body: unknown) {
   });
 }
 
-const originalKey = process.env.OPENAI_API_KEY;
+const originalKey = process.env.ANTHROPIC_API_KEY;
 const validBody = {
   opportunityType: "internship",
   text: "Software Engineering Intern. Build React interfaces and write tests.",
@@ -53,8 +64,9 @@ const validBody = {
 describe("POST /api/ai/extract-opportunity", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.OPENAI_API_KEY = "test-key";
+    process.env.ANTHROPIC_API_KEY = "test-key";
     mockedGetUser.mockResolvedValue(makeUser());
+    mockedCheckAiRateLimit.mockResolvedValue({ success: true });
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
@@ -62,9 +74,9 @@ describe("POST /api/ai/extract-opportunity", () => {
     vi.restoreAllMocks();
 
     if (originalKey === undefined) {
-      delete process.env.OPENAI_API_KEY;
+      delete process.env.ANTHROPIC_API_KEY;
     } else {
-      process.env.OPENAI_API_KEY = originalKey;
+      process.env.ANTHROPIC_API_KEY = originalKey;
     }
   });
 
@@ -87,7 +99,7 @@ describe("POST /api/ai/extract-opportunity", () => {
   });
 
   it("returns 503 when the API key is missing", async () => {
-    delete process.env.OPENAI_API_KEY;
+    delete process.env.ANTHROPIC_API_KEY;
 
     const response = await POST(makeRequest(validBody));
 

@@ -9,6 +9,10 @@ import {
 import {
   extractProfileItem,
 } from "@/features/skill-analysis/services/extract-profile-item";
+import {
+  checkAiRateLimit,
+  createRateLimitResponse,
+} from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -59,7 +63,16 @@ export async function POST(
     );
   }
 
-  if (!process.env.OPENAI_API_KEY) {
+  const rateLimit = await checkAiRateLimit(
+    request,
+    { userId: user.id },
+  );
+
+  if (!rateLimit.success) {
+    return createRateLimitResponse(rateLimit);
+  }
+
+  if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json(
       {
         error:
