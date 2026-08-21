@@ -7,6 +7,8 @@ import {
 
 import { formatEvidenceCatalogForPrompt } from
   "@/features/goals/data/format-evidence-catalog";
+import { isPhraseGroundedInSource } from
+  "@/features/goals/services/normalize-evidence";
 import { normalizeExtractedSkills } from
   "@/features/skill-analysis/services/normalize-extraction";
 import { getProfileExtractionModel } from
@@ -15,6 +17,7 @@ import { getProfileExtractionModel } from
 import {
   rawResumeExtractionSchema,
   type RawResumeExtraction,
+  type RawResumeItem,
   type ResumeExtractInput,
 } from "../schemas/resume-extraction";
 import type {
@@ -149,6 +152,22 @@ export function describeResumeExtractionFailure(
   };
 }
 
+export const COURSEWORK_EXTRACTION_RULES = `
+Coursework lists:
+- If the resume explicitly lists individually named courses under headings such as Relevant Coursework, Coursework, Selected Coursework, or Courses, create one kind "course" item per explicitly named course.
+- Headings such as "Relevant Coursework" are not course titles. Do not create a generic course item titled "Relevant Coursework", "Coursework", "Selected Coursework", or "Courses".
+- Each course title must be the explicit course name only, for example "Programming in Python", not the section heading.
+- Do not put the full comma-separated coursework list in description unless the resume has extra prose about that specific course.
+- Do not invent individual courses from a degree or program name. "BS Software Engineering" is not a coursework list and must not become Data Structures, Algorithms, Databases, or any other inferred course.
+- Course titles are not automatically copied into skills. Empty skills is valid when nothing maps literally.
+- The explicit wording of an individual course title MAY support a canonical evidence claim when the mapping is direct and literal. Examples: "Programming in Python" may map to Python; "Version Control" may map to Version Control; "Frontend Web Development" may map to Frontend Development.
+- Do not infer frameworks, languages, platforms, or capabilities beyond what that individual course title and its source explicitly support. "Frontend Web Development" must not become React. "Data Structures and Algorithms" must not become Java, Python, or other unmentioned technologies.
+- All evidence claims still go through grounding and catalog mapping. Prefer empty mappings over forcing an incorrect catalog ID.
+- Named courses split from one coursework list MUST share the same verbatim sourceExcerpt: the contiguous coursework section that contains the heading and the named courses. Do not fabricate a separate excerpt per course name.
+- This shared coursework excerpt is the only exception to "do not reuse another activity's block". Other activity kinds must still use unique blocks.
+- Do not mark a course completed unless the source states an end date or uses explicit completion language such as completed, earned, issued, awarded, or certified.
+`.trim();
+
 function buildResumeExtractionInstructions(): string {
   const catalog = formatEvidenceCatalogForPrompt();
 
@@ -164,7 +183,7 @@ Map supported evidence only to IDs from this MOVa evidence catalog:
 ${catalog}
 
 Rules:
-- Copy sourceExcerpt verbatim from the resume block/bullets for THAT activity only. Do not paraphrase. Do not copy the whole resume. Do not reuse another activity's block.
+- Copy sourceExcerpt verbatim from the resume block/bullets for THAT activity only. Do not paraphrase. Do not copy the whole resume. Do not reuse another activity's block, except for named courses split from one coursework list as specified below.
 - sourceExcerpt must be the smallest contiguous resume block that supports that activity.
 - skillsSectionExcerpt must be copied from the standalone Skills section only, when one exists. Return null when there is no standalone Skills section.
 - Put Skills-section terms in standaloneSkills, not on an unrelated activity.
@@ -182,6 +201,8 @@ Rules:
 - Do not reproduce deterministic implication chains.
 - Do not invent individual courses from a degree name.
 - Dates must be YYYY or YYYY-MM when present. Return null when a date is not stated.
+
+${COURSEWORK_EXTRACTION_RULES}
 `.trim();
 }
 
@@ -212,6 +233,45 @@ function createDraftItemId(): string {
   return crypto.randomUUID();
 }
 
+function countAcceptableCourseExcerpts(
+  items: RawResumeItem[],
+  resumeText: string,
+): Map<string, number> {
+  const counts = new Map<string, number>();
+
+  for (const item of items) {
+    if (item.kind !== "course") {
+      continue;
+    }
+
+    if (!isItemExcerptAcceptable(item.sourceExcerpt, resumeText)) {
+      continue;
+    }
+
+    counts.set(
+      item.sourceExcerpt,
+      (counts.get(item.sourceExcerpt) ?? 0) + 1,
+    );
+  }
+
+  return counts;
+}
+
+function claimsForResumeItem(
+  item: RawResumeItem,
+  sharedCourseExcerptCounts: Map<string, number>,
+): RawResumeItem["skills"] {
+  const sharedCount = sharedCourseExcerptCounts.get(item.sourceExcerpt) ?? 0;
+
+  if (item.kind !== "course" || sharedCount < 2) {
+    return item.skills;
+  }
+
+  return item.skills.filter((claim) =>
+    isPhraseGroundedInSource(claim.sourcePhrase, item.title),
+  );
+}
+
 export function normalizeRawResumeExtraction(
   sourceId: string,
   displayName: string,
@@ -220,6 +280,10 @@ export function normalizeRawResumeExtraction(
 ): ResumeImportDraft {
   const itemCount = raw.items.length;
   const items: ResumeDraftItem[] = [];
+  const sharedCourseExcerptCounts = countAcceptableCourseExcerpts(
+    raw.items,
+    resumeText,
+  );
 
   for (const item of raw.items) {
     const excerptOk = isItemExcerptAcceptable(
@@ -232,7 +296,7 @@ export function normalizeRawResumeExtraction(
     }
 
     const skills = normalizeExtractedSkills(
-      item.skills,
+      claimsForResumeItem(item, sharedCourseExcerptCounts),
       item.sourceExcerpt,
     );
 

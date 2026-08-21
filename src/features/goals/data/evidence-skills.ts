@@ -49,6 +49,12 @@ export const evidenceSkills = [
     description: "Programming language used to implement Android or JVM software.",
   },
   {
+    id: "python",
+    name: "Python",
+    category: "technology",
+    description: "Programming language used to write application or data software.",
+  },
+  {
     id: "aws",
     name: "AWS",
     category: "technology",
