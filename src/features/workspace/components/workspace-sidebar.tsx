@@ -27,11 +27,11 @@ export function WorkspaceSidebar({
       )}
     >
       <div className="flex items-center gap-2 px-2">
-        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground">
+        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--brand-plum)] font-wordmark text-sm font-bold text-primary-foreground">
           M
         </span>
 
-        <span className="text-lg font-bold tracking-tight text-foreground">
+        <span className="font-wordmark text-xl text-foreground">
           Mova
         </span>
       </div>

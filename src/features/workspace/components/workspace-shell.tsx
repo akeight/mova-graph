@@ -133,7 +133,7 @@ export function WorkspaceShell({
             {activeItem.label}
           </p>
 
-          <span className="text-lg font-bold tracking-tight text-foreground">
+          <span className="font-wordmark text-xl text-foreground">
             Mova
           </span>
         </header>
