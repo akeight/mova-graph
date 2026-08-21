@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +25,7 @@ import {
   WorkspaceRuntimeProvider,
   demoWorkspaceRuntime,
 } from "@/features/workspace/runtime/workspace-runtime";
+import { LANDING_PATH } from "@/lib/app-routes";
 
 type DemoPhase = "chooser" | "resume" | "workspace";
 
@@ -124,9 +126,17 @@ function DemoBanner({ onReset }: { onReset: () => void }) {
   return (
     <div className="sticky top-0 z-30 border-b border-warning/30 bg-warning/12 px-4 py-2">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
-        <p className="text-sm font-medium text-warning">
-          Demo mode — changes aren&apos;t saved.
-        </p>
+        <div className="flex min-w-0 items-center gap-4">
+          <Link
+            href={LANDING_PATH}
+            className="font-wordmark shrink-0 text-xl text-foreground transition-opacity hover:opacity-80"
+          >
+            Mova
+          </Link>
+          <p className="text-sm font-medium text-warning">
+            Demo mode — changes aren&apos;t saved.
+          </p>
+        </div>
         <Button type="button" variant="outline" size="sm" onClick={onReset}>
           Reset demo
         </Button>
