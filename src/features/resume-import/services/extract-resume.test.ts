@@ -6,6 +6,7 @@ import type {
 } from "../schemas/resume-extraction";
 
 import {
+  COURSEWORK_EXTRACTION_RULES,
   extractResume,
   normalizeRawResumeExtraction,
   ResumeExtractionEmptyError,
@@ -475,5 +476,90 @@ describe("extractResume", () => {
         }),
       ),
     ).rejects.toBeInstanceOf(ResumeExtractionEmptyError);
+  });
+
+  it("keeps named coursework as separate grounded course items", async () => {
+    const courseworkExcerpt = [
+      "Relevant Coursework:",
+      "Programming in Python, Data Structures and Algorithms,",
+      "Frontend Web Development, Probability & Statistics",
+    ].join("\n");
+    const courseworkResume = [
+      "Jordan Lee",
+      "B.S. Software Engineering, State University, 2022-2026",
+      courseworkExcerpt,
+      "Software Engineering Intern — Itron",
+      "Built .NET MAUI features for internal tooling used by the platform team.",
+      "Catalyst",
+      "Built a React dashboard for student progress tracking.",
+      "Volunteer tutor for introductory programming workshops.",
+      "Skills: AWS, Docker, TypeScript",
+    ].join("\n");
+    const courseTitles = [
+      "Programming in Python",
+      "Data Structures and Algorithms",
+      "Frontend Web Development",
+      "Probability & Statistics",
+    ] as const;
+
+    const draft = await extractResume(
+      {
+        sourceId: "source-1",
+        displayName: "coursework.pdf",
+        text: courseworkResume,
+      },
+      async () =>
+        extraction({
+          items: courseTitles.map((title) =>
+            item({
+              kind: "course",
+              title,
+              sourceExcerpt: courseworkExcerpt,
+              skills: [],
+            }),
+          ),
+          standaloneSkills: [],
+        }),
+    );
+
+    const courses = draft.items.filter((entry) => entry.kind === "course");
+
+    expect(courses.map((entry) => entry.title)).toEqual([...courseTitles]);
+    expect(
+      courses.some((entry) => entry.title === "Relevant Coursework"),
+    ).toBe(false);
+    expect(courses).toHaveLength(4);
+
+    for (const course of courses) {
+      expect(course.skills).toEqual([]);
+      expect(course.selectedSkillIds).toEqual([]);
+      expect(course.status).toBe("in-progress");
+    }
+  });
+});
+
+describe("COURSEWORK_EXTRACTION_RULES", () => {
+  it("instructs the model to split named coursework without inventing or auto-copying skills", () => {
+    expect(COURSEWORK_EXTRACTION_RULES).toContain(
+      "one kind \"course\" item per explicitly named course",
+    );
+    expect(COURSEWORK_EXTRACTION_RULES).toContain(
+      "Relevant Coursework",
+    );
+    expect(COURSEWORK_EXTRACTION_RULES).toContain(
+      "Do not invent individual courses from a degree or program name",
+    );
+    expect(COURSEWORK_EXTRACTION_RULES).toContain(
+      "Course titles are not automatically copied into skills",
+    );
+    expect(COURSEWORK_EXTRACTION_RULES).toContain(
+      "direct and literal",
+    );
+    expect(COURSEWORK_EXTRACTION_RULES).toContain(
+      "MUST share the same verbatim sourceExcerpt",
+    );
+    expect(COURSEWORK_EXTRACTION_RULES).not.toContain(
+      "A name in a coursework list is not enough",
+    );
   });
 });

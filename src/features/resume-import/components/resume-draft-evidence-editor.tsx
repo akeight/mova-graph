@@ -100,6 +100,14 @@ export function ResumeDraftEvidenceEditor({
     <fieldset className="space-y-3">
       <legend className="text-xs font-medium">Evidence</legend>
 
+      {directSkills.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          No skills or evidence were linked yet.
+          <br />
+          Add anything Mova missed below.
+        </p>
+      ) : null}
+
       {directSkills.map((skill) => {
         const impliedSkills = expandEvidenceImplications(skill.id);
         const confidenceLabel = evidenceConfidenceLabel(skill);
@@ -164,7 +172,7 @@ export function ResumeDraftEvidenceEditor({
       <div className="flex gap-2">
         <Input
           value={skillName}
-          placeholder="Add missing evidence"
+          placeholder="Add a skill or evidence"
           onChange={(event) => setSkillName(event.target.value)}
         />
         <Button type="button" variant="outline" size="sm" onClick={addSkill}>

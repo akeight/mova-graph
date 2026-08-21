@@ -397,6 +397,38 @@ describe("applyResumeDraftToProfile", () => {
     expect(result.experiences[0]?.skillIds).not.toContain("react");
   });
 
+  it("persists manually added Python on an empty course before approval", () => {
+    const emptyCourse = draftItem({
+      kind: "course",
+      title: "Programming in Python",
+      organization: undefined,
+      description: undefined,
+      status: "in-progress",
+      skills: [],
+      selectedSkillIds: [],
+    });
+    const withPython = addManualSkillToDraftItem(emptyCourse, "Python");
+    const python = withPython.skills.find((skill) => skill.id === "python");
+
+    expect(python).toMatchObject({
+      id: "python",
+      name: "Python",
+      provenance: "direct",
+    });
+    expect(withPython.selectedSkillIds).toContain("python");
+
+    const result = applyResumeDraftToProfile(
+      emptyProfile(),
+      emptyDraft({ items: [withPython] }),
+      "onboarding",
+    );
+    const course = result.courses.find(
+      (entry) => entry.title === "Programming in Python",
+    );
+
+    expect(course?.skillIds).toContain("python");
+  });
+
   it("does not persist unselected standalone skills as self-reported roots", () => {
     const result = applyResumeDraftToProfile(
       emptyProfile(),
