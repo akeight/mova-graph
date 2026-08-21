@@ -11,7 +11,7 @@ import {
 } from "@/features/resume-import/services/extract-resume";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 function withDebug<T extends Record<string, unknown>>(
   body: T,
