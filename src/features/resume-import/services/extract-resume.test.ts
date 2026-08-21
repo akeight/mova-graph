@@ -502,6 +502,17 @@ describe("extractResume", () => {
       "Probability & Statistics",
     ] as const;
 
+    const pythonClaim = {
+      sourcePhrase: "Python",
+      evidence: "Programming in Python",
+      mappings: [],
+    };
+    const leakedPythonClaim = {
+      sourcePhrase: "Programming in Python",
+      evidence: "Programming in Python",
+      mappings: [],
+    };
+
     const draft = await extractResume(
       {
         sourceId: "source-1",
@@ -515,7 +526,12 @@ describe("extractResume", () => {
               kind: "course",
               title,
               sourceExcerpt: courseworkExcerpt,
-              skills: [],
+              skills:
+                title === "Programming in Python"
+                  ? [pythonClaim]
+                  : title === "Data Structures and Algorithms"
+                    ? [leakedPythonClaim]
+                    : [],
             }),
           ),
           standaloneSkills: [],
@@ -523,16 +539,33 @@ describe("extractResume", () => {
     );
 
     const courses = draft.items.filter((entry) => entry.kind === "course");
+    const programmingInPython = courses.find(
+      (entry) => entry.title === "Programming in Python",
+    );
+    const dataStructures = courses.find(
+      (entry) => entry.title === "Data Structures and Algorithms",
+    );
+    const python = programmingInPython?.skills.find(
+      (skill) => skill.id === "python",
+    );
 
     expect(courses.map((entry) => entry.title)).toEqual([...courseTitles]);
     expect(
       courses.some((entry) => entry.title === "Relevant Coursework"),
     ).toBe(false);
     expect(courses).toHaveLength(4);
+    expect(python).toMatchObject({
+      id: "python",
+      provenance: "direct",
+      confidence: 0,
+    });
+    expect(["exact-id", "exact-name", "alias"]).toContain(
+      python?.normalizationMethod,
+    );
+    expect(dataStructures?.skills).toEqual([]);
+    expect(dataStructures?.selectedSkillIds).toEqual([]);
 
     for (const course of courses) {
-      expect(course.skills).toEqual([]);
-      expect(course.selectedSkillIds).toEqual([]);
       expect(course.status).toBe("in-progress");
     }
   });

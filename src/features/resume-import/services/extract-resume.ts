@@ -7,6 +7,8 @@ import {
 
 import { formatEvidenceCatalogForPrompt } from
   "@/features/goals/data/format-evidence-catalog";
+import { isPhraseGroundedInSource } from
+  "@/features/goals/services/normalize-evidence";
 import { normalizeExtractedSkills } from
   "@/features/skill-analysis/services/normalize-extraction";
 import { getProfileExtractionModel } from
@@ -15,6 +17,7 @@ import { getProfileExtractionModel } from
 import {
   rawResumeExtractionSchema,
   type RawResumeExtraction,
+  type RawResumeItem,
   type ResumeExtractInput,
 } from "../schemas/resume-extraction";
 import type {
@@ -230,6 +233,45 @@ function createDraftItemId(): string {
   return crypto.randomUUID();
 }
 
+function countAcceptableCourseExcerpts(
+  items: RawResumeItem[],
+  resumeText: string,
+): Map<string, number> {
+  const counts = new Map<string, number>();
+
+  for (const item of items) {
+    if (item.kind !== "course") {
+      continue;
+    }
+
+    if (!isItemExcerptAcceptable(item.sourceExcerpt, resumeText)) {
+      continue;
+    }
+
+    counts.set(
+      item.sourceExcerpt,
+      (counts.get(item.sourceExcerpt) ?? 0) + 1,
+    );
+  }
+
+  return counts;
+}
+
+function claimsForResumeItem(
+  item: RawResumeItem,
+  sharedCourseExcerptCounts: Map<string, number>,
+): RawResumeItem["skills"] {
+  const sharedCount = sharedCourseExcerptCounts.get(item.sourceExcerpt) ?? 0;
+
+  if (item.kind !== "course" || sharedCount < 2) {
+    return item.skills;
+  }
+
+  return item.skills.filter((claim) =>
+    isPhraseGroundedInSource(claim.sourcePhrase, item.title),
+  );
+}
+
 export function normalizeRawResumeExtraction(
   sourceId: string,
   displayName: string,
@@ -238,6 +280,10 @@ export function normalizeRawResumeExtraction(
 ): ResumeImportDraft {
   const itemCount = raw.items.length;
   const items: ResumeDraftItem[] = [];
+  const sharedCourseExcerptCounts = countAcceptableCourseExcerpts(
+    raw.items,
+    resumeText,
+  );
 
   for (const item of raw.items) {
     const excerptOk = isItemExcerptAcceptable(
@@ -250,7 +296,7 @@ export function normalizeRawResumeExtraction(
     }
 
     const skills = normalizeExtractedSkills(
-      item.skills,
+      claimsForResumeItem(item, sharedCourseExcerptCounts),
       item.sourceExcerpt,
     );
 
