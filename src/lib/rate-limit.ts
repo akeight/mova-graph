@@ -79,19 +79,32 @@ function getLimiters(): Limiters | null {
   }
 }
 
+function firstForwardedIp(value: string | null) {
+  if (!value) {
+    return undefined;
+  }
+
+  return value
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)[0];
+}
+
 export function getClientIp(request: Request) {
-  const forwarded = request.headers.get("x-forwarded-for");
+  const vercelForwarded = firstForwardedIp(
+    request.headers.get("x-vercel-forwarded-for"),
+  );
+
+  if (vercelForwarded) {
+    return vercelForwarded;
+  }
+
+  const forwarded = firstForwardedIp(
+    request.headers.get("x-forwarded-for"),
+  );
 
   if (forwarded) {
-    const parts = forwarded
-      .split(",")
-      .map((part) => part.trim())
-      .filter(Boolean);
-    const ip = parts.at(-1);
-
-    if (ip) {
-      return ip;
-    }
+    return forwarded;
   }
 
   const realIp = request.headers.get("x-real-ip")?.trim();
@@ -183,14 +196,14 @@ export function createRateLimitResponse(
 ) {
   if (result.type === "unavailable") {
     return NextResponse.json(
-      { error: "AI demo protection is temporarily unavailable." },
+      { error: "AI service protection is temporarily unavailable." },
       { status: 503 },
     );
   }
 
   const error =
     result.type === "daily"
-      ? "You've reached today's demo usage limit. Please try again later."
+      ? "You've reached today's AI usage limit. Please try again later."
       : "Too many AI requests. Please wait a few minutes and try again.";
 
   return NextResponse.json(

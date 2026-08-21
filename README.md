@@ -395,6 +395,7 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 
 ANTHROPIC_API_KEY=
+ANTHROPIC_MODEL=claude-opus-4-5
 
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
@@ -533,6 +534,7 @@ Create `.env.local` from `.env.example`.
 | `NEXT_PUBLIC_SUPABASE_URL`             | Supabase project URL                        |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase browser-safe publishable key       |
 | `ANTHROPIC_API_KEY`                    | Server-side Anthropic API access            |
+| `ANTHROPIC_MODEL`                      | Claude model id (`claude-opus-4-5`)         |
 | `UPSTASH_REDIS_REST_URL`               | Upstash Redis REST URL for AI rate limiting |
 | `UPSTASH_REDIS_REST_TOKEN`             | Upstash Redis REST token for AI rate limiting |
 

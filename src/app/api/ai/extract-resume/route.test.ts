@@ -274,7 +274,7 @@ describe("POST /api/ai/extract-resume", () => {
 
     expect(response.status).toBe(429);
     expect(body.error).toBe(
-      "You've reached today's demo usage limit. Please try again later.",
+      "You've reached today's AI usage limit. Please try again later.",
     );
     expect(Number(response.headers.get("Retry-After"))).toBeGreaterThanOrEqual(
       1,
@@ -298,7 +298,7 @@ describe("POST /api/ai/extract-resume", () => {
 
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({
-      error: "AI demo protection is temporarily unavailable.",
+      error: "AI service protection is temporarily unavailable.",
     });
     expect(mockedGenerateText).not.toHaveBeenCalled();
   });

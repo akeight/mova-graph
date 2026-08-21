@@ -73,12 +73,22 @@ function enableRedisConfig() {
 }
 
 describe("getClientIp", () => {
-  it("uses the last x-forwarded-for address", () => {
+  it("prefers x-vercel-forwarded-for over other IP headers", () => {
+    const request = makeRequest({
+      "x-vercel-forwarded-for": "203.0.113.9",
+      "x-forwarded-for": "198.51.100.2, 192.0.2.1",
+      "x-real-ip": "192.0.2.8",
+    });
+
+    expect(getClientIp(request)).toBe("203.0.113.9");
+  });
+
+  it("uses the first x-forwarded-for address", () => {
     const request = makeRequest({
       "x-forwarded-for": "203.0.113.1, 198.51.100.2",
     });
 
-    expect(getClientIp(request)).toBe("198.51.100.2");
+    expect(getClientIp(request)).toBe("203.0.113.1");
   });
 
   it("trims addresses in a forwarded list", () => {
@@ -86,7 +96,7 @@ describe("getClientIp", () => {
       "x-forwarded-for": " 203.0.113.1 ,  198.51.100.2 ",
     });
 
-    expect(getClientIp(request)).toBe("198.51.100.2");
+    expect(getClientIp(request)).toBe("203.0.113.1");
   });
 
   it("falls back to x-real-ip", () => {
@@ -143,7 +153,7 @@ describe("createRateLimitResponse", () => {
     expect(response.status).toBe(429);
     expect(await response.json()).toEqual({
       error:
-        "You've reached today's demo usage limit. Please try again later.",
+        "You've reached today's AI usage limit. Please try again later.",
     });
   });
 
@@ -165,7 +175,7 @@ describe("createRateLimitResponse", () => {
 
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({
-      error: "AI demo protection is temporarily unavailable.",
+      error: "AI service protection is temporarily unavailable.",
     });
   });
 });
@@ -213,7 +223,7 @@ describe("checkAiRateLimit", () => {
 
     await expect(
       checkAiRateLimit(
-        makeRequest({ "x-forwarded-for": `1.2.3.4, ${ip}` }),
+        makeRequest({ "x-forwarded-for": `${ip}, 1.2.3.4` }),
         { userId: "user-1" },
       ),
     ).resolves.toEqual({ success: true });

@@ -1,7 +1,7 @@
 import { anthropic } from "@ai-sdk/anthropic";
 
 const DEFAULT_EXTRACTION_MODEL =
-  "claude-opus-5.4";
+  "claude-opus-4-5";
 
 export function getProfileExtractionModel() {
   return anthropic(
