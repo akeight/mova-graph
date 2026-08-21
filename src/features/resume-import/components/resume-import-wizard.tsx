@@ -37,10 +37,8 @@ import {
 import {
   analysisStepIndexForElapsedMs,
 } from "../services/resume-analysis-progress";
-import {
-  extractResumeSource,
-  parseResumeFile,
-} from "../services/resume-import-client";
+import { useWorkspaceRuntime } from
+  "@/features/workspace/runtime/workspace-runtime";
 import { canAddResumeSourceText } from
   "../services/resume-session-capacity";
 import {
@@ -73,6 +71,7 @@ type ResumeImportWizardProps = {
   mode: ResumeImportMode;
   onApproved: (profile: StudentProfile) => void;
   onCancel: () => void;
+  initialSources?: CollectedSource[];
 };
 
 function createSourceId(): string {
@@ -133,9 +132,13 @@ export function ResumeImportWizard({
   mode,
   onApproved,
   onCancel,
+  initialSources,
 }: ResumeImportWizardProps) {
+  const runtime = useWorkspaceRuntime();
   const [stage, setStage] = useState<WizardStage>("collect");
-  const [sources, setSources] = useState<CollectedSource[]>([]);
+  const [sources, setSources] = useState<CollectedSource[]>(
+    () => initialSources ?? [],
+  );
   const [pasteText, setPasteText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [analysisSourceIndex, setAnalysisSourceIndex] = useState(0);
@@ -186,7 +189,7 @@ export function ResumeImportWizard({
     setError(null);
 
     try {
-      const parsed = await parseResumeFile(file);
+      const parsed = await runtime.parseResumeFile(file);
       addParsedSource(parsed.displayName, parsed.text);
     } catch (caught) {
       setError(
@@ -242,7 +245,7 @@ export function ResumeImportWizard({
         setAnalysisSourceIndex(index);
         setAnalysisElapsedMs(0);
         drafts.push(
-          await extractResumeSource({
+          await runtime.extractResumeSource({
             sourceId: source.id,
             displayName: source.displayName,
             text: source.text,
@@ -290,6 +293,39 @@ export function ResumeImportWizard({
       );
     }
   };
+
+  if (stage === "collect" && runtime.kind === "demo") {
+    const sample = sources[0];
+
+    return (
+      <div className="space-y-5">
+        <div>
+          <h2 className="text-lg font-semibold">Sample resume</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            This is a sanitized software-engineering student resume. Analyze it
+            to see what Mova finds — no account required.
+          </p>
+        </div>
+
+        <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-2xl border bg-muted/30 p-4 text-sm leading-relaxed text-foreground">
+          {sample?.text ?? ""}
+        </pre>
+
+        {error ? (
+          <p className="text-sm text-destructive">{error}</p>
+        ) : null}
+
+        <div className="flex justify-between gap-3">
+          <Button variant="ghost" onClick={onCancel}>
+            Back
+          </Button>
+          <Button disabled={!canAnalyze} onClick={() => void analyze()}>
+            Analyze sample resume
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (stage === "collect") {
     return (

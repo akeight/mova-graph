@@ -2,12 +2,13 @@ import { redirect } from "next/navigation";
 
 import { AuthForm } from "@/features/auth/components/auth-form";
 import { getAuthenticatedUser } from "@/features/auth/services/session";
+import { getPostLoginPath } from "@/lib/app-routes";
 
 export default async function LoginPage() {
   const user = await getAuthenticatedUser();
 
   if (user) {
-    redirect("/");
+    redirect(getPostLoginPath());
   }
 
   return (

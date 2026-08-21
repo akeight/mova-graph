@@ -12,11 +12,13 @@ import { StudentProfileForm } from
   "@/features/student-profile/components/student-profile-form";
 import type { StudentProfile } from
   "@/features/student-profile/types/student-profile";
+import { useWorkspaceRuntime } from
+  "@/features/workspace/runtime/workspace-runtime";
 
 type ProfileViewProps = {
   profile: StudentProfile;
   onProfileChange: (profile: StudentProfile) => void;
-  onRestoreDemo: () => void;
+  onRestoreDemo?: () => void;
   onAddExtractedItem: (
     item: ApprovedProfileItem,
   ) => void;
@@ -30,7 +32,9 @@ export function ProfileView({
   onAddExtractedItem,
   onManageEvidence,
 }: ProfileViewProps) {
+  const runtime = useWorkspaceRuntime();
   const [importing, setImporting] = useState(false);
+  const canImportResume = runtime.kind !== "demo";
 
   return (
     <div className="space-y-6">
@@ -46,40 +50,42 @@ export function ProfileView({
         </p>
       </header>
 
-      <section className="space-y-3 rounded-2xl border bg-card p-5 shadow-sm">
-        <div>
-          <h2 className="text-sm font-semibold">Add more evidence</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Import another resume or add items yourself. Later imports
-            are reviewed before anything is added.
-          </p>
-        </div>
-
-        {importing ? (
-          <ResumeImportWizard
-            baselineProfile={profile}
-            mode="later"
-            onApproved={(nextProfile) => {
-              onProfileChange(nextProfile);
-              setImporting(false);
-            }}
-            onCancel={() => setImporting(false)}
-          />
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setImporting(true)}
-              className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground"
-            >
-              Import another resume
-            </button>
-            <span className="self-center text-xs text-muted-foreground">
-              or add manually below
-            </span>
+      {canImportResume ? (
+        <section className="space-y-3 rounded-2xl border bg-card p-5 shadow-sm">
+          <div>
+            <h2 className="text-sm font-semibold">Add more evidence</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Import another resume or add items yourself. Later imports
+              are reviewed before anything is added.
+            </p>
           </div>
-        )}
-      </section>
+
+          {importing ? (
+            <ResumeImportWizard
+              baselineProfile={profile}
+              mode="later"
+              onApproved={(nextProfile) => {
+                onProfileChange(nextProfile);
+                setImporting(false);
+              }}
+              onCancel={() => setImporting(false)}
+            />
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setImporting(true)}
+                className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground"
+              >
+                Import another resume
+              </button>
+              <span className="self-center text-xs text-muted-foreground">
+                or add manually below
+              </span>
+            </div>
+          )}
+        </section>
+      ) : null}
 
       <ProfileExtractionReview onAdd={onAddExtractedItem} />
 

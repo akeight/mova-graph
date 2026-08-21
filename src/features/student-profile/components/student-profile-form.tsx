@@ -35,7 +35,7 @@ import { PROFILE_ITEM_DESCRIPTION_MAX } from
 type StudentProfileFormProps = {
   profile: StudentProfile;
   onChange: (profile: StudentProfile) => void;
-  onRestoreDemo: () => void;
+  onRestoreDemo?: () => void;
   onManageEvidence?: (skillId: string) => void;
 };
 
@@ -214,6 +214,7 @@ export function StudentProfileForm({
           </p>
         </div>
 
+        {onRestoreDemo ? (
         <button
           type="button"
           onClick={onRestoreDemo}
@@ -226,6 +227,7 @@ export function StudentProfileForm({
 
           Load example
         </button>
+        ) : null}
       </div>
 
       <div className="space-y-3">

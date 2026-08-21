@@ -1,8 +1,8 @@
-import { MovaWorkspace } from "@/features/pathway-graph/components/mova-workspace";
-import { requireUser } from "@/features/auth/services/session";
+import { LandingPage } from "@/features/landing/components/landing-page";
+import { getAuthenticatedUser } from "@/features/auth/services/session";
 
 export default async function HomePage() {
-  const user = await requireUser();
+  const user = await getAuthenticatedUser();
 
-  return <MovaWorkspace userEmail={user.email ?? null} />;
+  return <LandingPage signedIn={Boolean(user)} />;
 }

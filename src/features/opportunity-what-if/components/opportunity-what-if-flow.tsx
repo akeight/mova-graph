@@ -13,8 +13,10 @@ import {
   MIN_OPPORTUNITY_TEXT_CHARS,
 } from "../constants";
 import { buildOpportunityResult } from "../services/build-opportunity-result";
-import { extractOpportunitySource } from
-  "../services/extract-opportunity-client";
+import { DEMO_OPPORTUNITY_TEXT, DEMO_OPPORTUNITY_TYPE } from
+  "@/features/demo/data/demo-opportunity";
+import { useWorkspaceRuntime } from
+  "@/features/workspace/runtime/workspace-runtime";
 import { createOpportunityDraft } from "../services/opportunity-draft";
 import type {
   OpportunityEvidenceDraft,
@@ -39,10 +41,16 @@ export function OpportunityWhatIfFlow({
   role,
   onAnalyzeStart,
 }: OpportunityWhatIfFlowProps) {
+  const runtime = useWorkspaceRuntime();
+  const isDemo = runtime.kind === "demo";
   const [stage, setStage] = useState<OpportunityWhatIfStage>("input");
   const [opportunityType, setOpportunityType] =
-    useState<OpportunityType>(initialType);
-  const [sourceText, setSourceText] = useState("");
+    useState<OpportunityType>(
+      isDemo ? DEMO_OPPORTUNITY_TYPE : initialType,
+    );
+  const [sourceText, setSourceText] = useState(
+    isDemo ? DEMO_OPPORTUNITY_TEXT : "",
+  );
   const [draft, setDraft] = useState<OpportunityEvidenceDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,14 +80,21 @@ export function OpportunityWhatIfFlow({
 
   const resetLocalState = () => {
     setStage("input");
-    setOpportunityType(initialType);
-    setSourceText("");
+    setOpportunityType(isDemo ? DEMO_OPPORTUNITY_TYPE : initialType);
+    setSourceText(isDemo ? DEMO_OPPORTUNITY_TEXT : "");
     setDraft(null);
     setError(null);
   };
 
   const analyze = async () => {
     const text = sourceText.trim();
+
+    if (isDemo && text !== DEMO_OPPORTUNITY_TEXT.trim()) {
+      setError(
+        "Custom opportunity analysis requires a Mova account. Sign in to paste your own listing, or restore the sample opportunity.",
+      );
+      return;
+    }
 
     if (text.length < MIN_OPPORTUNITY_TEXT_CHARS) {
       setError(`Please paste at least ${MIN_OPPORTUNITY_TEXT_CHARS} characters.`);
@@ -98,7 +113,7 @@ export function OpportunityWhatIfFlow({
     setStage("analyzing");
 
     try {
-      const extraction = await extractOpportunitySource({
+      const extraction = await runtime.extractOpportunitySource({
         opportunityType,
         text,
       });
@@ -162,6 +177,7 @@ export function OpportunityWhatIfFlow({
       sourceText={sourceText}
       error={error}
       isAnalyzing={stage === "analyzing"}
+      sampleMode={isDemo}
       onTypeChange={setOpportunityType}
       onTextChange={setSourceText}
       onAnalyze={() => {

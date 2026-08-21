@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getPostLoginPath } from "@/lib/app-routes";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type AuthMode = "sign-in" | "sign-up";
@@ -69,7 +70,7 @@ export function AuthForm() {
         return;
       }
 
-      router.replace("/");
+      router.replace(getPostLoginPath());
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");
