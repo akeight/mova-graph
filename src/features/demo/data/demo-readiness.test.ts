@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { careerRoles } from "@/features/goals/data/career-roles";
+import { careerRoles, getCareerRole } from
+  "@/features/goals/data/career-roles";
 import { calculateReadiness } from
   "@/features/readiness/services/calculate-readiness";
 import { generateRecommendations } from
@@ -11,52 +12,41 @@ import { approvedSkillIdsFromSelection } from
   "@/features/skill-analysis/services/extracted-skill-review";
 
 import { DEMO_OPPORTUNITY_EXTRACTION } from "./demo-opportunity";
-import { createExploredDemoProfile } from "./demo-resume";
+import {
+  DEMO_DEFAULT_CAREER_ROLE_ID,
+  createExploredDemoProfile,
+} from "./demo-resume";
 
 describe("demo readiness and what-if", () => {
   const profile = createExploredDemoProfile();
 
-  it("scores every current career target without changing readiness logic", () => {
-    const summaries = careerRoles.map((role) => {
-      const assessment = calculateReadiness(profile, role);
-      const recommendations = generateRecommendations({ profile, role });
-      const core = assessment.competencies.filter(
-        (competency) => competency.tier === "core",
-      );
-      const common = assessment.competencies.filter(
-        (competency) => competency.tier === "common",
-      );
+  it("matches representative live Claude readiness for every career target", () => {
+    const summaries = Object.fromEntries(
+      careerRoles.map((role) => {
+        const assessment = calculateReadiness(profile, role);
+        const recommendations = generateRecommendations({ profile, role });
 
-      return {
-        roleId: role.id,
-        title: role.title,
-        score: assessment.score,
-        core: core.map((competency) => ({
-          id: competency.competencyId,
-          status: competency.evidenceStatus,
-          credit: competency.competencyCredit,
-        })),
-        common: common.map((competency) => ({
-          id: competency.competencyId,
-          status: competency.evidenceStatus,
-          credit: competency.competencyCredit,
-        })),
-        topGaps: [...core, ...common]
-          .filter((competency) => competency.evidenceStatus !== "demonstrated")
-          .slice(0, 4)
-          .map((competency) => competency.competencyName),
-        topRecommendation: recommendations[0]?.title ?? null,
-      };
-    });
-
-    expect(summaries).toHaveLength(4);
-    expect(summaries.every((summary) => Number.isInteger(summary.score))).toBe(
-      true,
+        return [
+          role.id,
+          {
+            score: assessment.score,
+            topRecommendation: recommendations[0]?.title ?? null,
+          },
+        ];
+      }),
     );
+
+    expect(summaries).toMatchObject({
+      "product-engineer": { score: 33 },
+      "frontend-engineer": { score: 30 },
+      "mobile-engineer": { score: 40 },
+      "full-stack-engineer": { score: 47 },
+    });
+    expect(DEMO_DEFAULT_CAREER_ROLE_ID).toBe("full-stack-engineer");
   });
 
-  it("projects What If scores with the real scenario engine", () => {
-    const role = careerRoles[0];
+  it("projects Full-Stack What If with the real scenario engine", () => {
+    const role = getCareerRole("full-stack-engineer");
     const skillIds = approvedSkillIdsFromSelection(
       DEMO_OPPORTUNITY_EXTRACTION.skills,
       DEMO_OPPORTUNITY_EXTRACTION.skills
@@ -72,7 +62,14 @@ describe("demo readiness and what-if", () => {
       skillIds,
     });
 
-    expect(result.scoreAfter).toBeGreaterThanOrEqual(result.scoreBefore);
-    expect(result.projectedAssessment.score).toBe(result.scoreAfter);
+    expect(skillIds).toEqual(
+      expect.arrayContaining(["deployment"]),
+    );
+    expect(result.scoreBefore).toBe(47);
+    expect(result.scoreAfter).toBe(60);
+    expect(result.scoreIncrease).toBe(13);
+    expect(result.explanation.strengthenedCompetencyNames).toEqual([
+      "Production Delivery",
+    ]);
   });
 });

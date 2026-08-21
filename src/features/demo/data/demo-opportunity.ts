@@ -10,7 +10,7 @@ import type { OpportunityExtraction } from
 
 export const DEMO_OPPORTUNITY_TYPE = "internship" as const;
 
-export const DEMO_OPPORTUNITY_TEXT = `Product Engineering Internship — Production Delivery
+export const DEMO_OPPORTUNITY_TEXT = `Software Engineering Internship — Production Delivery
 Join a product team shipping software into a customer-facing environment. You will own production releases, deployment and release pipelines, and monitoring so each build can be relied on after it ships.
 `;
 
@@ -39,7 +39,7 @@ function demoOpportunitySkill(
 
 export const DEMO_OPPORTUNITY_EXTRACTION: OpportunityExtraction = {
   opportunityType: DEMO_OPPORTUNITY_TYPE,
-  title: "Product Engineering Internship — Production Delivery",
+  title: "Software Engineering Internship — Production Delivery",
   description:
     "Ship software into a customer-facing environment by owning production releases, deployment and release pipelines, and monitoring.",
   skills: expandApprovedEvidence([

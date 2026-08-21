@@ -8,6 +8,7 @@ import { completeOnboarding, initialOnboarding } from
   "@/features/onboarding/services/onboarding-state";
 
 import {
+  DEMO_DEFAULT_CAREER_ROLE_ID,
   DEMO_RESUME_DISPLAY_NAME,
   DEMO_RESUME_DRAFT,
   DEMO_RESUME_SOURCE_ID,
@@ -31,10 +32,14 @@ function itemById(id: string) {
   return item;
 }
 
-function directIds(itemId: string): string[] {
+function extractedDirects(itemId: string) {
   return itemById(itemId)
     .skills.filter((skill) => skill.provenance !== "derived")
-    .map((skill) => skill.id);
+    .map((skill) => ({
+      id: skill.id,
+      confidence: skill.confidence,
+      selected: itemById(itemId).selectedSkillIds.includes(skill.id),
+    }));
 }
 
 describe("DEMO_RESUME_DRAFT", () => {
@@ -52,14 +57,32 @@ describe("DEMO_RESUME_DRAFT", () => {
     expect(DEMO_RESUME_DRAFT.institution).toBe(
       "Western Governors University",
     );
-    expect(DEMO_RESUME_DRAFT.applyProposedName).toBe(true);
     expect(DEMO_RESUME_DRAFT.possibleDuplicates).toEqual([]);
     expect(DEMO_RESUME_TEXT).toContain("ALLYSON KEIGHTLEY");
     expect(DEMO_RESUME_TEXT).not.toMatch(/@/);
     expect(DEMO_RESUME_TEXT).not.toMatch(/linkedin\.com|github\.com|https?:\/\//i);
+    expect(DEMO_DEFAULT_CAREER_ROLE_ID).toBe("full-stack-engineer");
   });
 
-  it("splits relevant coursework into nine named courses", () => {
+  it("has 14 expected items and nine named courses", () => {
+    expect(DEMO_RESUME_DRAFT.items).toHaveLength(14);
+    expect(DEMO_RESUME_DRAFT.items.map((item) => item.id)).toEqual([
+      "demo-work-itron",
+      "demo-work-todd",
+      "demo-work-kahani",
+      "demo-project-catalyst",
+      "demo-project-classifier",
+      "demo-course-python",
+      "demo-course-dsa",
+      "demo-course-frontend",
+      "demo-course-statistics",
+      "demo-course-data",
+      "demo-course-leadership",
+      "demo-course-ui",
+      "demo-course-ux",
+      "demo-course-version-control",
+    ]);
+
     const courses = courseItems();
 
     expect(courses).toHaveLength(9);
@@ -74,67 +97,84 @@ describe("DEMO_RESUME_DRAFT", () => {
   });
 
   it("keeps Python on the Python course and off DSA", () => {
-    expect(directIds("demo-course-python")).toContain("python");
-    expect(directIds("demo-course-dsa")).not.toContain("python");
+    expect(extractedDirects("demo-course-python")).toEqual([
+      { id: "python", confidence: 0.8, selected: false },
+    ]);
+    expect(extractedDirects("demo-course-dsa")).toEqual([]);
   });
 
-  it("does not add React to Frontend Web Development", () => {
-    expect(directIds("demo-course-frontend")).toEqual(["frontend-development"]);
-    expect(directIds("demo-course-frontend")).not.toContain("react");
+  it("does not add React to Frontend Web Development and leaves it unselected", () => {
+    expect(extractedDirects("demo-course-frontend")).toEqual([
+      { id: "frontend-development", confidence: 0.75, selected: false },
+    ]);
+    expect(itemById("demo-course-frontend").selectedSkillIds).toEqual([]);
   });
 
-  it("keeps Itron directs without derived mobile/testing roots", () => {
-    expect(directIds("demo-work-itron")).toEqual([
+  it("leaves UX evidence visible but unselected below the 0.85 gate", () => {
+    expect(extractedDirects("demo-course-ui")).toEqual([
+      { id: "user-experience", confidence: 0.7, selected: false },
+    ]);
+    expect(extractedDirects("demo-course-ux")).toEqual([
+      { id: "user-experience", confidence: 0.75, selected: false },
+    ]);
+  });
+
+  it("keeps representative Itron, Todd, Kahani, Catalyst, and classifier evidence", () => {
+    expect(itemById("demo-work-itron").selectedSkillIds).toEqual([
       "dotnet-maui",
+      "mobile-development",
       "csharp",
       "ios-development",
       "android-development",
       "unit-testing",
+      "software-testing",
       "api-integration",
     ]);
-    expect(directIds("demo-work-itron")).not.toContain("mobile-development");
-    expect(directIds("demo-work-itron")).not.toContain("software-testing");
-    expect(itemById("demo-work-itron").skills.map((skill) => skill.id)).toEqual(
-      expect.arrayContaining(["mobile-development", "software-testing"]),
-    );
-  });
 
-  it("keeps Todd, Kahani, Catalyst, and classifier directs", () => {
-    expect(directIds("demo-work-todd")).toEqual([
-      "react",
-      "nextjs",
+    expect(extractedDirects("demo-work-todd")).toEqual(
+      expect.arrayContaining([
+        { id: "react", confidence: 0.95, selected: true },
+        { id: "nextjs", confidence: 0.95, selected: true },
+        { id: "performance", confidence: 0.8, selected: false },
+      ]),
+    );
+    expect(itemById("demo-work-todd").selectedSkillIds).not.toContain(
       "performance",
-    ]);
-    expect(directIds("demo-work-kahani")).toEqual([
-      "flutter",
-      "ios-development",
-      "android-development",
-      "react",
+    );
+
+    expect(extractedDirects("demo-work-kahani")).toEqual(
+      expect.arrayContaining([
+        { id: "flutter", confidence: 0.95, selected: true },
+        { id: "product-thinking", confidence: 0.8, selected: false },
+      ]),
+    );
+    expect(itemById("demo-work-kahani").selectedSkillIds).not.toContain(
       "product-thinking",
-    ]);
-    expect(directIds("demo-work-kahani")).not.toContain("swift");
-    expect(directIds("demo-work-kahani")).not.toContain("kotlin");
-    expect(directIds("demo-project-catalyst")).toEqual([
+    );
+
+    expect(itemById("demo-project-catalyst").selectedSkillIds).toEqual([
       "nextjs",
       "typescript",
       "postgresql",
       "api-integration",
     ]);
-    expect(directIds("demo-project-classifier")).toEqual([
+    expect(itemById("demo-project-classifier").selectedSkillIds).toEqual([
       "python",
       "react",
+      "frontend-development",
       "fastapi",
     ]);
   });
 
-  it("keeps technical skills standalone", () => {
+  it("keeps technical skills standalone without html-css", () => {
     expect(DEMO_RESUME_DRAFT.selectedStandaloneSkillIds).toEqual([
       "aws",
       "supabase",
       "nodejs",
       "express",
-      "html-css",
     ]);
+    expect(DEMO_RESUME_DRAFT.standaloneSkills.map((skill) => skill.id)).not
+      .toContain("html-css");
 
     const attached = DEMO_RESUME_DRAFT.items.flatMap((item) =>
       item.skills
@@ -143,14 +183,13 @@ describe("DEMO_RESUME_DRAFT", () => {
     );
 
     expect(attached).not.toEqual(
-      expect.arrayContaining([
-        "aws",
-        "supabase",
-        "nodejs",
-        "express",
-        "html-css",
-      ]),
+      expect.arrayContaining(["aws", "supabase", "nodejs", "express"]),
     );
+  });
+
+  it("leaves all nine courses with empty selectedSkillIds", () => {
+    expect(courseItems().every((item) => item.selectedSkillIds.length === 0))
+      .toBe(true);
   });
 });
 
@@ -177,6 +216,13 @@ describe("demo profile apply", () => {
     expect(profile.skills.find((skill) => skill.id === "aws")?.selfReported).toBe(
       true,
     );
+    expect(profile.skills.some((skill) => skill.id === "product-thinking")).toBe(
+      false,
+    );
+    expect(profile.skills.some((skill) => skill.id === "performance")).toBe(
+      false,
+    );
+    expect(profile.skills.some((skill) => skill.id === "html-css")).toBe(false);
   });
 
   it("uses completeOnboarding for the explore-existing-path seed", () => {

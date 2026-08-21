@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
+  DEMO_DEFAULT_CAREER_ROLE_ID,
   DEMO_RESUME_DISPLAY_NAME,
   DEMO_RESUME_SOURCE_ID,
   DEMO_RESUME_TEXT,
@@ -110,6 +111,7 @@ function DemoWorkspace({
           persistenceEnabled={false}
           initialProfile={workspaceSeed.profile}
           initialOnboarding={workspaceSeed.onboarding}
+          initialSelectedRoleId={DEMO_DEFAULT_CAREER_ROLE_ID}
           showRestoreDemo={false}
           accountVariant="demo"
         />
