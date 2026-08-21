@@ -69,7 +69,7 @@ export async function POST(request: Request) {
     return createRateLimitResponse(rateLimit);
   }
 
-  if (!process.env.OPENAI_API_KEY) {
+  if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json(
       { error: "AI extraction is not configured." },
       { status: 503 },

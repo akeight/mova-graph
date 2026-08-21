@@ -191,7 +191,7 @@ The intended hackathon demonstration follows one complete student journey:
 ### Artificial Intelligence
 
 * Vercel AI SDK
-* OpenAI as the initial model provider
+* Anthropic as the initial model provider
 * Structured outputs validated with Zod
 * Provider abstraction for future model changes
 
@@ -347,7 +347,7 @@ Install or configure the following before running Mova locally:
 * Bun
 * Git
 * A Supabase project
-* An OpenAI API key
+* An Anthropic API key
 * GitHub CLI, optional but recommended
 
 Check your Bun installation:
@@ -394,7 +394,7 @@ DIRECT_URL=
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 
-OPENAI_API_KEY=
+ANTHROPIC_API_KEY=
 
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
@@ -532,7 +532,7 @@ Create `.env.local` from `.env.example`.
 | `DIRECT_URL`                           | Direct PostgreSQL connection for migrations |
 | `NEXT_PUBLIC_SUPABASE_URL`             | Supabase project URL                        |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase browser-safe publishable key       |
-| `OPENAI_API_KEY`                       | Server-side OpenAI API access               |
+| `ANTHROPIC_API_KEY`                    | Server-side Anthropic API access            |
 | `UPSTASH_REDIS_REST_URL`               | Upstash Redis REST URL for AI rate limiting |
 | `UPSTASH_REDIS_REST_TOKEN`             | Upstash Redis REST token for AI rate limiting |
 

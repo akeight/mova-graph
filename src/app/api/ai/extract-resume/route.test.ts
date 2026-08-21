@@ -131,12 +131,12 @@ function makeRequest(body: unknown) {
   });
 }
 
-const originalKey = process.env.OPENAI_API_KEY;
+const originalKey = process.env.ANTHROPIC_API_KEY;
 
 describe("POST /api/ai/extract-resume", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.OPENAI_API_KEY = "test-key";
+    process.env.ANTHROPIC_API_KEY = "test-key";
     mockedGetUser.mockResolvedValue(makeUser());
     mockedCheckAiRateLimit.mockResolvedValue({ success: true });
     vi.spyOn(console, "error").mockImplementation(() => {});
@@ -146,9 +146,9 @@ describe("POST /api/ai/extract-resume", () => {
     vi.restoreAllMocks();
 
     if (originalKey === undefined) {
-      delete process.env.OPENAI_API_KEY;
+      delete process.env.ANTHROPIC_API_KEY;
     } else {
-      process.env.OPENAI_API_KEY = originalKey;
+      process.env.ANTHROPIC_API_KEY = originalKey;
     }
   });
 
@@ -168,8 +168,8 @@ describe("POST /api/ai/extract-resume", () => {
     expect(mockedGenerateText).not.toHaveBeenCalled();
   });
 
-  it("returns 503 when OPENAI_API_KEY is missing", async () => {
-    delete process.env.OPENAI_API_KEY;
+  it("returns 503 when ANTHROPIC_API_KEY is missing", async () => {
+    delete process.env.ANTHROPIC_API_KEY;
 
     const response = await POST(
       makeRequest({

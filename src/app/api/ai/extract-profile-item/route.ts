@@ -72,7 +72,7 @@ export async function POST(
     return createRateLimitResponse(rateLimit);
   }
 
-  if (!process.env.OPENAI_API_KEY) {
+  if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json(
       {
         error:
