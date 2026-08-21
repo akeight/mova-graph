@@ -334,7 +334,7 @@ export function ResumeImportWizard({
           <h2 className="text-lg font-semibold">Your resume sources</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Add up to {MAX_RESUME_SOURCES} PDF or DOCX files, or paste text.
-            MOVa will combine them into one profile draft.
+            Mova will combine them into one profile draft.
           </p>
         </div>
 
@@ -662,7 +662,7 @@ function DraftReviewStage({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold">MOVa combined your experience</h2>
+        <h2 className="text-lg font-semibold">Mova combined your experience</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           We found information across {draft.sources.length} resume
           {draft.sources.length === 1 ? "" : "s"}. {draft.items.length} items

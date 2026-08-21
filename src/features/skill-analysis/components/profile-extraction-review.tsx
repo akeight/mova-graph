@@ -660,7 +660,7 @@ export function ProfileExtractionReview({
                           {skill.normalizationMethod ===
                           "unmapped" ? (
                             <span className="mt-1 block text-xs text-muted-foreground">
-                              Not yet mapped to a MOVa career
+                              Not yet mapped to a Mova career
                               evidence category
                             </span>
                           ) : skill.sourcePhrase ? (

@@ -10,8 +10,8 @@ import type { OpportunityExtraction } from
 
 export const DEMO_OPPORTUNITY_TYPE = "internship" as const;
 
-export const DEMO_OPPORTUNITY_TEXT = `Production Release Internship — Mobile Delivery
-Join the Itron mobile team to take the enterprise .NET MAUI application from internal testing to a customer-facing production release. You will own release pipelines, store submission, and monitoring so each build can be relied on in the field.
+export const DEMO_OPPORTUNITY_TEXT = `Product Engineering Internship — Production Delivery
+Join a product team shipping software into a customer-facing environment. You will own production releases, deployment and release pipelines, and monitoring so each build can be relied on after it ships.
 `;
 
 function demoOpportunitySkill(
@@ -39,14 +39,14 @@ function demoOpportunitySkill(
 
 export const DEMO_OPPORTUNITY_EXTRACTION: OpportunityExtraction = {
   opportunityType: DEMO_OPPORTUNITY_TYPE,
-  title: "Production Release Internship — Mobile Delivery",
+  title: "Product Engineering Internship — Production Delivery",
   description:
-    "Take the enterprise MAUI application from internal testing to a customer-facing production release by owning release pipelines, store submission, and monitoring.",
+    "Ship software into a customer-facing environment by owning production releases, deployment and release pipelines, and monitoring.",
   skills: expandApprovedEvidence([
     demoOpportunitySkill(
       "deployment",
-      "production release",
-      "Own release pipelines, store submission, and monitoring so each build can be relied on in the field",
+      "production releases",
+      "Own production releases, deployment and release pipelines, and monitoring so each build can be relied on after it ships",
     ),
   ]),
 };
