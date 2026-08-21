@@ -101,7 +101,8 @@ describe("demo extractors", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(extractDemoResumeSource()).resolves.toEqual(DEMO_RESUME_DRAFT);
-    expect(timeoutSpy).toHaveBeenCalledWith(DEMO_RESUME_EXTRACT_TIMEOUT_MS);
+    expect(DEMO_RESUME_EXTRACT_TIMEOUT_MS).toBe(45_000);
+    expect(timeoutSpy).toHaveBeenCalledWith(45_000);
     expect(getLastDemoResumeExtractionMode()).toBe("fallback");
 
     timeoutSpy.mockRestore();

@@ -36,13 +36,6 @@ function withDebug<T extends Record<string, unknown>>(
 }
 
 export async function POST(request: Request) {
-  try {
-    await request.text();
-  } catch {
-    // The public demo ignores the request body. Drain it so callers cannot
-    // supply resume text, then continue with the committed sample.
-  }
-
   const rateLimit = await checkDemoAiRateLimit(request);
 
   if (!rateLimit.success) {
