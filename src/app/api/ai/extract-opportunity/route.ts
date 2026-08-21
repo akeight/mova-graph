@@ -8,6 +8,10 @@ import {
   describeOpportunityExtractionFailure,
   extractOpportunity,
 } from "@/features/opportunity-what-if/services/extract-opportunity";
+import {
+  checkAiRateLimit,
+  createRateLimitResponse,
+} from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -54,6 +58,14 @@ export async function POST(request: Request) {
       },
       { status: 400 },
     );
+  }
+
+  const rateLimit = await checkAiRateLimit(request, {
+    userId: user.id,
+  });
+
+  if (!rateLimit.success) {
+    return createRateLimitResponse(rateLimit);
   }
 
   if (!process.env.OPENAI_API_KEY) {

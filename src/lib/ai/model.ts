@@ -1,11 +1,11 @@
-import { openai } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
 
 const DEFAULT_EXTRACTION_MODEL =
-  "gpt-5-mini";
+  "claude-opus-5.4";
 
 export function getProfileExtractionModel() {
-  return openai(
-    process.env.OPENAI_MODEL ??
+  return anthropic(
+    process.env.ANTHROPIC_MODEL ??
       DEFAULT_EXTRACTION_MODEL,
   );
 }

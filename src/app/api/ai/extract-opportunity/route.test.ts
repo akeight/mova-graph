@@ -6,10 +6,20 @@ import { getAuthenticatedUser } from
   "@/features/auth/services/session";
 import { extractOpportunity } from
   "@/features/opportunity-what-if/services/extract-opportunity";
+import { checkAiRateLimit } from "@/lib/rate-limit";
 
 vi.mock("@/features/auth/services/session", () => ({
   getAuthenticatedUser: vi.fn(),
 }));
+
+vi.mock("@/lib/rate-limit", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/rate-limit")>();
+
+  return {
+    ...actual,
+    checkAiRateLimit: vi.fn(),
+  };
+});
 
 vi.mock(
   "@/features/opportunity-what-if/services/extract-opportunity",
@@ -28,6 +38,7 @@ vi.mock(
 
 const mockedGetUser = vi.mocked(getAuthenticatedUser);
 const mockedExtract = vi.mocked(extractOpportunity);
+const mockedCheckAiRateLimit = vi.mocked(checkAiRateLimit);
 
 function makeUser() {
   return {
@@ -55,6 +66,7 @@ describe("POST /api/ai/extract-opportunity", () => {
     vi.clearAllMocks();
     process.env.OPENAI_API_KEY = "test-key";
     mockedGetUser.mockResolvedValue(makeUser());
+    mockedCheckAiRateLimit.mockResolvedValue({ success: true });
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
 

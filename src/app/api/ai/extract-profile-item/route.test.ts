@@ -4,20 +4,32 @@ import { POST } from "./route";
 
 import { getAuthenticatedUser } from
   "@/features/auth/services/session";
+import { checkAiRateLimit } from "@/lib/rate-limit";
 
 vi.mock("@/features/auth/services/session", () => ({
   getAuthenticatedUser: vi.fn(),
 }));
+
+vi.mock("@/lib/rate-limit", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/rate-limit")>();
+
+  return {
+    ...actual,
+    checkAiRateLimit: vi.fn(),
+  };
+});
 
 vi.mock("@/features/skill-analysis/services/extract-profile-item", () => ({
   extractProfileItem: vi.fn(),
 }));
 
 const mockedGetUser = vi.mocked(getAuthenticatedUser);
+const mockedCheckAiRateLimit = vi.mocked(checkAiRateLimit);
 
 describe("POST /api/ai/extract-profile-item", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockedCheckAiRateLimit.mockResolvedValue({ success: true });
   });
 
   it("returns 401 when unauthenticated", async () => {

@@ -19,11 +19,14 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.40",
     "@ai-sdk/openai": "^4.0.22",
     "@dagrejs/dagre": "^3.0.0",
     "@phosphor-icons/react": "^2.1.10",
     "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.110.9",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.2",
     "@xyflow/react": "^12.11.2",
     "ai": "^7.0.40",
     "class-variance-authority": "^0.7.1",

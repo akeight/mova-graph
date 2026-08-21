@@ -395,6 +395,9 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 
 OPENAI_API_KEY=
+
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
 ```
 
 Run the development server:
@@ -530,6 +533,8 @@ Create `.env.local` from `.env.example`.
 | `NEXT_PUBLIC_SUPABASE_URL`             | Supabase project URL                        |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase browser-safe publishable key       |
 | `OPENAI_API_KEY`                       | Server-side OpenAI API access               |
+| `UPSTASH_REDIS_REST_URL`               | Upstash Redis REST URL for AI rate limiting |
+| `UPSTASH_REDIS_REST_TOKEN`             | Upstash Redis REST token for AI rate limiting |
 
 Never commit `.env.local` or production secrets.
 
@@ -599,49 +604,49 @@ docs: update local setup instructions
 
 ### Milestone 1: Foundation
 
-* [ ] Initialize the Next.js application
-* [ ] Configure shadcn/ui
-* [ ] Configure Supabase
-* [ ] Configure Drizzle
-* [ ] Add authentication
-* [ ] Establish shared types and validation
+* [x] Initialize the Next.js application
+* [x] Configure shadcn/ui
+* [x] Configure Supabase
+* [x] Configure Drizzle
+* [x] Add authentication
+* [x] Establish shared types and validation
 
 ### Milestone 2: Student Model
 
-* [ ] Create the student profile schema
-* [ ] Add career-goal selection
-* [ ] Add courses and experiences
-* [ ] Create skill and evidence relationships
+* [x] Create the student profile schema
+* [x] Add career-goal selection
+* [x] Add courses and experiences
+* [x] Create skill and evidence relationships
 
 ### Milestone 3: Intelligence
 
-* [ ] Add structured AI extraction
-* [ ] Build the matching engine
-* [ ] Calculate readiness and skill gaps
-* [ ] Rank recommended next moves
+* [x] Add structured AI extraction
+* [x] Build the matching engine
+* [x] Calculate readiness and skill gaps
+* [x] Rank recommended next moves
 
 ### Milestone 4: Visualization
 
-* [ ] Create the React Flow foundation
-* [ ] Build custom node types
-* [ ] Build custom relationship edges
-* [ ] Add graph filters and controls
-* [ ] Connect graph data to PostgreSQL records
+* [x] Create the React Flow foundation
+* [x] Build custom node types
+* [x] Build custom relationship edges
+* [x] Add graph filters and controls
+* [x] Connect graph data to PostgreSQL records
 
 ### Milestone 5: Scenario Simulation
 
-* [ ] Add hypothetical decisions
-* [ ] Recalculate readiness
-* [ ] Display before-and-after changes
-* [ ] Generate scenario explanations
+* [x] Add hypothetical decisions
+* [x] Recalculate readiness
+* [x] Display before-and-after changes
+* [x] Generate scenario explanations
 
 ### Milestone 6: Demo Readiness
 
 * [ ] Create a polished onboarding flow
 * [ ] Seed a compelling student story
-* [ ] Add loading and error states
+* [x] Add loading and error states
 * [ ] Test the complete demo journey
-* [ ] Deploy to Vercel
+* [x] Deploy to Vercel
 * [ ] Verify the production environment
 
 ## Product Principles
