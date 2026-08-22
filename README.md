@@ -30,7 +30,6 @@ Students are left to determine how these pieces connect:
 * Does this project provide meaningful evidence of those skills?
 * Which career requirements am I still missing?
 * Should I prioritize another course, project, internship, or organization?
-* What changes if I choose a different academic or career direction?
 
 Traditional planning systems show students what they must complete.
 
@@ -123,16 +122,6 @@ The analysis distinguishes between:
 ### Next-Move Recommendations
 
 Mova recommends actions based on their expected impact.
-
-Recommendations may include:
-
-* Complete a specific course
-* Build a targeted project
-* Strengthen an existing project
-* Apply for an internship
-* Join a relevant student organization
-* Document stronger evidence
-* Explore an adjacent career role
 
 ### Scenario Simulator
 
