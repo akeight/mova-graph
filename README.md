@@ -644,12 +644,12 @@ docs: update local setup instructions
 
 ### Milestone 6: Demo Readiness
 
-* [ ] Create a polished onboarding flow
-* [ ] Seed a compelling student story
+* [x] Create a polished onboarding flow
+* [x] Seed a compelling student story
 * [x] Add loading and error states
-* [ ] Test the complete demo journey
+* [x] Test the complete demo journey
 * [x] Deploy to Vercel
-* [ ] Verify the production environment
+* [x] Verify the production environment
 
 ## Product Principles
 
