@@ -8,6 +8,10 @@ Rather than giving students another static checklist, Mova helps them understand
 
 Mova is being developed for the **Stellic Pathfinders Hackathon**.
 
+[Watch the demo](https://www.loom.com/share/dc5b975977104a69a70a87de26dbf009)
+
+![Mova](src/app/opengraph-image.png)
+
 ## Project Status
 
 **Initial development**
@@ -576,30 +580,6 @@ Do not commit or use:
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
-```
-
-## Development Workflow
-
-Create a branch for each feature or fix:
-
-```bash
-git checkout -b feature/graph-foundation
-```
-
-Before opening a pull request, run:
-
-```bash
-bun run validate
-```
-
-Use focused commit messages:
-
-```text
-feat: add student goal selection
-feat: build initial pathway graph
-fix: validate AI skill extraction
-chore: configure Drizzle migrations
-docs: update local setup instructions
 ```
 
 ## Initial Milestones
