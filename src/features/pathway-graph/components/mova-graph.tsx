@@ -6,7 +6,9 @@ import {
   useMemo,
   useRef,
   useState,
+  type Ref,
 } from "react";
+import { createPortal } from "react-dom";
 
 import {
   Background,
@@ -59,17 +61,25 @@ import type {
 
 const HORIZONTAL_SPACING = 560;
 const VERTICAL_SPACING = 150;
-
-const FIT_VIEW_OPTIONS = {
-  padding: 0.1,
-  minZoom: 0.35,
-  maxZoom: 0.85,
-  duration: 350,
-} as const;
+const FOCUS_HEADER_HEIGHT = 56;
 
 const nodeTypes = {
   mova: MovaNodeCard,
 } satisfies NodeTypes;
+
+type ViewportSize = {
+  width: number;
+  height: number;
+};
+
+function getLockedViewport(): ViewportSize {
+  const viewport = window.visualViewport;
+
+  return {
+    width: Math.round(viewport?.width ?? window.innerWidth),
+    height: Math.round(viewport?.height ?? window.innerHeight),
+  };
+}
 
 type MovaGraphProps = {
   profile: StudentProfile;
@@ -82,14 +92,14 @@ type MovaGraphProps = {
 type OpportunityMapCanvasProps = {
   graph: MovaGraphData;
   resetVersion: number;
-  isFocusMode?: boolean;
+  showMiniMap?: boolean;
   onNodeActivate?: (node: MovaNode) => void;
 };
 
 function OpportunityMapCanvas({
   graph,
   resetVersion,
-  isFocusMode = false,
+  showMiniMap = false,
   onNodeActivate,
 }: OpportunityMapCanvasProps) {
   const [nodes, setNodes, onNodesChange] =
@@ -102,6 +112,7 @@ function OpportunityMapCanvas({
     MovaNode,
     MovaEdge
   > | null>(null);
+  const fitFrameRef = useRef<number | null>(null);
 
   const structureKey = useMemo(
     () =>
@@ -112,11 +123,18 @@ function OpportunityMapCanvas({
     [graph.nodes],
   );
 
-  const fitGraph = useCallback((duration = 350) => {
-    window.requestAnimationFrame(() => {
+  const fitGraph = useCallback(() => {
+    if (fitFrameRef.current !== null) {
+      window.cancelAnimationFrame(fitFrameRef.current);
+    }
+
+    fitFrameRef.current = window.requestAnimationFrame(() => {
+      fitFrameRef.current = null;
       void reactFlowInstanceRef.current?.fitView({
-        ...FIT_VIEW_OPTIONS,
-        duration,
+        padding: 0.1,
+        minZoom: 0.35,
+        maxZoom: 0.85,
+        duration: 0,
       });
     });
   }, []);
@@ -131,65 +149,132 @@ function OpportunityMapCanvas({
   }, [fitGraph, structureKey]);
 
   useEffect(() => {
-    fitGraph(250);
-  }, [fitGraph, isFocusMode]);
-
-  useEffect(() => {
     if (resetVersion === 0) {
       return;
     }
 
     setNodes(graph.nodes);
     setEdges(graph.edges);
-    fitGraph(400);
+    fitGraph();
   }, [fitGraph, graph, resetVersion, setEdges, setNodes]);
 
+  useEffect(() => {
+    return () => {
+      if (fitFrameRef.current !== null) {
+        window.cancelAnimationFrame(fitFrameRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      nodeTypes={nodeTypes}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
+      onNodeClick={
+        onNodeActivate
+          ? (_event, node) => {
+              onNodeActivate(node);
+            }
+          : undefined
+      }
+      onInit={(instance) => {
+        reactFlowInstanceRef.current = instance;
+        fitGraph();
+      }}
+      nodesConnectable={false}
+      zoomOnDoubleClick={false}
+      minZoom={0.35}
+      maxZoom={1.5}
+      proOptions={{ hideAttribution: true }}
+      style={{ width: "100%", height: "100%" }}
+      aria-label="Career opportunity map"
+    >
+      <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
+      <Controls showInteractive={false} />
+      {showMiniMap ? (
+        <MiniMap pannable zoomable />
+      ) : null}
+    </ReactFlow>
+  );
+}
+
+type GraphToolbarProps = {
+  title: string;
+  description: string;
+  titleId: string;
+  isFocusMode: boolean;
+  onReset: () => void;
+  onToggleFocus: () => void;
+  exitButtonRef?: Ref<HTMLButtonElement>;
+};
+
+function GraphToolbar({
+  title,
+  description,
+  titleId,
+  isFocusMode,
+  onReset,
+  onToggleFocus,
+  exitButtonRef,
+}: GraphToolbarProps) {
   return (
     <div
-      className={
-        isFocusMode
-          ? "h-full min-h-0 w-full flex-1 overflow-hidden bg-background"
-          : "h-[500px] w-full overflow-hidden rounded-2xl border bg-background sm:h-[600px] lg:h-[70vh] lg:min-h-[620px]"
-      }
+      className={cn(
+        "flex shrink-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between",
+        isFocusMode &&
+          "h-14 flex-row items-center gap-3 border-b px-4 py-0 sm:px-6",
+      )}
     >
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onNodeClick={
-          onNodeActivate
-            ? (_event, node) => {
-                onNodeActivate(node);
-              }
-            : undefined
-        }
-        onInit={(instance) => {
-          reactFlowInstanceRef.current = instance;
-          fitGraph();
-        }}
-        nodesConnectable={false}
-        fitView
-        fitViewOptions={{
-          padding: 0.1,
-          minZoom: 0.35,
-          maxZoom: 0.85,
-        }}
-        minZoom={0.35}
-        maxZoom={1.5}
-        aria-label="Career opportunity map"
-      >
-        <Background
-          variant={BackgroundVariant.Dots}
-          gap={20}
-          size={1}
-        />
+      <div className="min-w-0">
+        <h2
+          id={titleId}
+          className={cn(
+            "font-semibold tracking-tight",
+            isFocusMode ? "truncate text-base" : "text-2xl",
+          )}
+        >
+          {title}
+        </h2>
 
-        <Controls />
+        {isFocusMode ? null : (
+          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+            {description}
+          </p>
+        )}
+      </div>
 
-        <MiniMap pannable zoomable className="hidden md:block" />
-      </ReactFlow>
+      <div className="flex shrink-0 flex-wrap gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size={isFocusMode ? "sm" : "default"}
+          onClick={onReset}
+        >
+          <RotateCcw aria-hidden="true" />
+          {isFocusMode ? "Reset" : "Reset layout"}
+        </Button>
+
+        {isFocusMode ? (
+          <Button
+            ref={exitButtonRef}
+            type="button"
+            size="sm"
+            onClick={onToggleFocus}
+          >
+            <Minimize2 aria-hidden="true" />
+            <span className="hidden sm:inline">Exit focus</span>
+            <span className="sm:hidden">Exit</span>
+          </Button>
+        ) : (
+          <Button type="button" onClick={onToggleFocus}>
+            <Expand aria-hidden="true" />
+            Focus mode
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
@@ -202,7 +287,11 @@ export function MovaGraph({
   onNodeActivate,
 }: MovaGraphProps) {
   const [isFocusModeOpen, setIsFocusModeOpen] = useState(false);
+  const [focusViewport, setFocusViewport] = useState<ViewportSize | null>(
+    null,
+  );
   const [resetVersion, setResetVersion] = useState(0);
+  const [canUseMiniMap, setCanUseMiniMap] = useState(false);
   const exitButtonRef = useRef<HTMLButtonElement>(null);
 
   const graph = useMemo(() => {
@@ -219,30 +308,56 @@ export function MovaGraph({
   }, [profile, recommendations, role]);
 
   useEffect(() => {
+    const media = window.matchMedia("(min-width: 768px)");
+    const syncMiniMap = () => setCanUseMiniMap(media.matches);
+
+    syncMiniMap();
+    media.addEventListener("change", syncMiniMap);
+
+    return () => media.removeEventListener("change", syncMiniMap);
+  }, []);
+
+  useEffect(() => {
     if (!isFocusModeOpen) {
       return;
     }
 
-    const previousOverflow = document.body.style.overflow;
+    const html = document.documentElement;
+    const previousHtmlOverflow = html.style.overflow;
+    const previousBodyOverflow = document.body.style.overflow;
+
+    html.style.overflow = "hidden";
     document.body.style.overflow = "hidden";
     exitButtonRef.current?.focus();
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setIsFocusModeOpen(false);
+        setFocusViewport(null);
       }
     };
 
     window.addEventListener("keydown", onKeyDown);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
+      html.style.overflow = previousHtmlOverflow;
+      document.body.style.overflow = previousBodyOverflow;
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [isFocusModeOpen]);
 
   const resetGraphLayout = () => {
     setResetVersion((currentVersion) => currentVersion + 1);
+  };
+
+  const openFocusMode = () => {
+    setFocusViewport(getLockedViewport());
+    setIsFocusModeOpen(true);
+  };
+
+  const closeFocusMode = () => {
+    setIsFocusModeOpen(false);
+    setFocusViewport(null);
   };
 
   const title = isScenarioPreview
@@ -262,7 +377,7 @@ export function MovaGraph({
         }
 
         if (isFocusModeOpen) {
-          setIsFocusModeOpen(false);
+          closeFocusMode();
           window.setTimeout(() => {
             onNodeActivate(action);
           }, 100);
@@ -273,89 +388,78 @@ export function MovaGraph({
       }
     : undefined;
 
+  const canvas = (
+    <OpportunityMapCanvas
+      graph={graph}
+      resetVersion={resetVersion}
+      showMiniMap={canUseMiniMap && !isFocusModeOpen}
+      onNodeActivate={handleNodeActivate}
+    />
+  );
+
   return (
-    <section
-      className={cn(
-        "min-w-0 space-y-4",
-        isFocusModeOpen &&
-          "fixed inset-0 z-50 flex flex-col space-y-0 bg-background",
-      )}
-      role={isFocusModeOpen ? "dialog" : undefined}
-      aria-modal={isFocusModeOpen ? true : undefined}
-      aria-labelledby="opportunity-map-title"
-    >
-      <div
-        className={cn(
-          "flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between",
-          isFocusModeOpen &&
-            "shrink-0 border-b px-4 py-3 sm:items-center sm:px-6",
-        )}
-      >
-        <div className="min-w-0">
-          <h2
-            id="opportunity-map-title"
-            className="text-2xl font-semibold tracking-tight"
-          >
-            {title}
-          </h2>
-
-          <p
-            className={cn(
-              "mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground",
-              isFocusModeOpen && "hidden sm:block",
-            )}
-          >
-            {description}
-          </p>
-        </div>
-
-        <div className="flex shrink-0 flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size={isFocusModeOpen ? "sm" : "default"}
-            onClick={resetGraphLayout}
-          >
-            <RotateCcw aria-hidden="true" />
-            {isFocusModeOpen ? "Reset" : "Reset layout"}
-          </Button>
-
-          {isFocusModeOpen ? (
-            <Button
-              ref={exitButtonRef}
-              type="button"
-              size="sm"
-              onClick={() => setIsFocusModeOpen(false)}
-            >
-              <Minimize2 aria-hidden="true" />
-              <span className="hidden sm:inline">Exit focus</span>
-              <span className="sm:hidden">Exit</span>
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              onClick={() => setIsFocusModeOpen(true)}
-            >
-              <Expand aria-hidden="true" />
-              Focus mode
-            </Button>
-          )}
-        </div>
-      </div>
-
-      <OpportunityMapCanvas
-        graph={graph}
-        resetVersion={resetVersion}
-        isFocusMode={isFocusModeOpen}
-        onNodeActivate={handleNodeActivate}
+    <section className="min-w-0 space-y-4" aria-labelledby="opportunity-map-title">
+      <GraphToolbar
+        title={title}
+        description={description}
+        titleId="opportunity-map-title"
+        isFocusMode={false}
+        onReset={resetGraphLayout}
+        onToggleFocus={openFocusMode}
       />
 
-      {isFocusModeOpen ? null : (
-        <p className="text-xs leading-relaxed text-muted-foreground md:hidden">
-          Drag to explore the map, pinch to zoom, or open Focus
-          mode for a larger view.
-        </p>
-      )}
+      <div className="h-[500px] w-full overflow-hidden rounded-2xl border bg-background sm:h-[600px] lg:h-[70vh] lg:min-h-[620px]">
+        {isFocusModeOpen ? null : canvas}
+      </div>
+
+      <p className="text-xs leading-relaxed text-muted-foreground md:hidden">
+        Drag to explore the map, pinch to zoom, or open Focus
+        mode for a larger view.
+      </p>
+
+      {isFocusModeOpen && focusViewport
+        ? createPortal(
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="opportunity-map-focus-title"
+              className="flex flex-col overflow-hidden bg-background"
+              style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                zIndex: 100,
+                width: focusViewport.width,
+                height: focusViewport.height,
+                overscrollBehavior: "none",
+              }}
+            >
+              <GraphToolbar
+                title={title}
+                description={description}
+                titleId="opportunity-map-focus-title"
+                isFocusMode
+                onReset={resetGraphLayout}
+                onToggleFocus={closeFocusMode}
+                exitButtonRef={exitButtonRef}
+              />
+
+              <div
+                className="overflow-hidden bg-background"
+                style={{
+                  width: focusViewport.width,
+                  height: Math.max(
+                    200,
+                    focusViewport.height - FOCUS_HEADER_HEIGHT,
+                  ),
+                }}
+              >
+                {canvas}
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </section>
   );
 }

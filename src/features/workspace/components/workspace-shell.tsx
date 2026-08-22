@@ -138,7 +138,7 @@ export function WorkspaceShell({
           </span>
         </header>
 
-        <main className="min-w-0 flex-1 overflow-x-clip px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
+        <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
           <div className="mx-auto w-full min-w-0 max-w-6xl">
             {children}
           </div>
